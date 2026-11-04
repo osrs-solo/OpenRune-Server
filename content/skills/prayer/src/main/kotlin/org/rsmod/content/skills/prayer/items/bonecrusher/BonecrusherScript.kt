@@ -29,11 +29,10 @@ public class BonecrusherScript @Inject constructor() : PluginScript() {
 
     private fun ProtectedAccess.checkCharges(slot: Int) {
         inv[slot] ?: return
-        val charges = bonecrusherCharges
-        when {
-            charges == 0 -> mes("The bonecrusher has no charges. It can be charged with ectotokens.")
-            player.isBonecrusherActivityEnabled() -> mes("The bonecrusher has $charges charges. It is active and ready to crush bones.")
-            else -> mes("The bonecrusher has $charges charges. It has been deactivated, and will not crush bones now.",)
+        if (player.isBonecrusherActivityEnabled()) {
+            mes("The bonecrusher needs no charges. It is active and ready to crush bones.")
+        } else {
+            mes("The bonecrusher needs no charges. It is deactivated; use Activity to turn it on.")
         }
     }
 

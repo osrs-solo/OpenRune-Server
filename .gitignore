@@ -59,3 +59,5 @@ logs/
 .claude/settings.local.json
 .mcp.json
 /bench
+
+/jagexcache/

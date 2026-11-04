@@ -203,13 +203,25 @@ constructor(
                     input
                 }
                 IfButtonOp.Op8 -> Int.MAX_VALUE
+                IfButtonOp.Op1 -> {
+                    configureFromBankside(slot)
+                    return
+                }
                 IfButtonOp.Op9 -> {
                     clickBanksideExtraOp(slot)
                     return
                 }
-                else -> throw IllegalStateException("Invalid main inv op: $op")
+                else -> return resendSlot(inv, 0)
             }
         invDeposit(slot, count, inv)
+    }
+
+    /** The bankside's "Configure" op, shown on rune pouches, runs the obj's own first op. */
+    private suspend fun ProtectedAccess.configureFromBankside(slot: Int) {
+        val obj = inv[slot] ?: return resendSlot(inv, 0)
+        if (getInvObj(obj).hasInvOp(1)) {
+            opHeld1(slot)
+        }
     }
 
     public fun ProtectedAccess.invDeposit(slot: Int, count: Int, inventory: Inventory): Boolean {

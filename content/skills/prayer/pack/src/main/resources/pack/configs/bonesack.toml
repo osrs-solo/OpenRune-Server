@@ -1,0 +1,8 @@
+[[item]]
+id = "obj.rag_bonesack"
+inherit = "obj.rag_bonesack"
+ioption1 = "Fill"
+ioption2 = "Wear"
+ioption3 = "Check"
+ioption4 = "Empty"
+ioption5 = "Drop"

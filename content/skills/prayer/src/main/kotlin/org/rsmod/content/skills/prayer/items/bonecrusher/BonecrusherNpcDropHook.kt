@@ -10,7 +10,6 @@ import org.rsmod.api.player.events.prayer.PrayerSkillAction
 import org.rsmod.api.player.events.skilling.SkillingActionCompleteEvent
 import org.rsmod.api.player.events.skilling.SkillingActionContext
 import org.rsmod.api.player.vars.boolVarBit
-import org.rsmod.api.player.vars.intVarBit
 import org.rsmod.api.death.NpcDeathDropContext
 import org.rsmod.api.death.NpcDeathDropHook
 import org.rsmod.api.player.stat.statAdvance
@@ -47,10 +46,7 @@ constructor(
 
         val row = boneXpByItem[internal] ?: return false
 
-        val source = player.findBonecrusherChargeSource() ?: return false
-        if (!decrementBonecrusherCharge(player, source)) {
-            return false
-        }
+        val source = player.findBonecrusher() ?: return false
 
         val prayerXp = row.exp.toDouble() / 2
         player.statAdvance("stat.prayer", prayerXp)
@@ -102,37 +98,17 @@ constructor(
         return neck.isType("obj.dragonbone_necklace")
     }
 
-    private fun Player.findBonecrusherChargeSource(): CrusherSource? {
+    private fun Player.findBonecrusher(): CrusherSource? {
         val neckSlot = Wearpos.Front.slot
-        val neck = worn[neckSlot]
-        if (neck != null && neck.isCrusherItem() && bonecrusherCharges > 0) {
+        if (worn[neckSlot].isCrusherItem()) {
             return CrusherSource(worn, neckSlot)
         }
-
-        for (slot in inv.indices) {
-            val obj = inv[slot] ?: continue
-            if (!obj.isType("obj.bonecrusher")) {
-                continue
-            }
-            if (bonecrusherCharges > 0) {
-                return CrusherSource(inv, slot)
-            }
-        }
-        return null
-    }
-
-    private fun decrementBonecrusherCharge(player: Player, source: CrusherSource): Boolean {
-        if (player.bonecrusherCharges <= 0) {
-            return false
-        }
-        player.bonecrusherCharges -= 1
-        return true
+        val slot = inv.indices.firstOrNull { inv[it]?.isType("obj.bonecrusher") == true }
+        return slot?.let { CrusherSource(inv, it) }
     }
 
     private data class CrusherSource(val inventory: Inventory, val slot: Int)
 }
-
-private var Player.bonecrusherCharges by intVarBit("varbit.charges_bonecrusher_quantity")
 
 private fun InvObj?.isCrusherItem(): Boolean {
     if (this == null) {
