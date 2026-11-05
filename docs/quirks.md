@@ -132,4 +132,22 @@ Sword hand-in and ore-pack conversion use all-or-nothing inventory transactions.
 Failed payment leaves the sword, commission and reward state unchanged. Coins go
 to the bank first, then inventory if necessary; Ultimate Ironmen use inventory only.
 
+## Teleport items
+
+Destinations live in the `teleport_destination` dbtable and the items that use them in
+`teleport_item` (`content/travel/teleports`). Known differences from OSRS:
+
+- Every destination is open: quest, diary and unlock requirements (Fortis Colosseum, Tears of
+  Guthix, Xeric's Honour, Darkmeyer, Slepe, Wyrmscraig, Miscellania, ...) are not checked.
+- A destination whose map region is missing tells the player so instead of teleporting, and no
+  charge is spent.
+- All items use the standard jewellery teleport animation; the ectophial, seed pod and Xeric's
+  talisman do not play their own.
+- Ardougne cloak farm teleports have no daily limit.
+- Kharedst's memoirs and the Book of the Dead spend `veos_memoir_charges`, but recharging at the
+  Old Memorial and adding pages are not implemented.
+- Xeric's talisman and memoir charges sit in player varbits (as the cache's `charges_*` varbits
+  do), so every copy a player owns shares one pool. Uncharging refunds that pool once.
+- The slayer ring's `Rub` (contact master) and the ring of wealth's `Features` are not implemented.
+
 [magic-numbers]: https://en.wikipedia.org/wiki/Magic_number_(programming)
