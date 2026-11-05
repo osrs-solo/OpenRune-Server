@@ -1,7 +1,17 @@
 [gamevals.dbtable]
 pickable_objects=65529
+lockpick_doors=65406
 
 [gamevals.dbrow]
+lockpick_door_ardougne_coin_chest=62600
+lockpick_door_ardougne_nature_chest=62601
+lockpick_door_ardougne_sewer_gate_l=62602
+lockpick_door_ardougne_sewer_gate_r=62603
+lockpick_door_chaos_druid_tower=62604
+lockpick_door_ardougne_castle=62605
+lockpick_door_magic_axe_hut=62606
+lockpick_door_pirates_hideout=62607
+lockpick_door_yanille_dungeon=62608
 pickable_potato=65361
 pickable_flax=65360
 pickable_banana=65359
