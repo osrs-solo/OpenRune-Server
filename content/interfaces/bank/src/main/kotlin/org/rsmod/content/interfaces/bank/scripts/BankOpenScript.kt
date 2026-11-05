@@ -17,6 +17,7 @@ import org.rsmod.api.player.vars.boolVarBit
 import org.rsmod.api.script.onIfClose
 import org.rsmod.api.script.onIfOpen
 import org.rsmod.content.interfaces.bank.bankCapacity
+import org.rsmod.content.interfaces.bank.closeRunePouchView
 import org.rsmod.content.interfaces.bank.configs.bank_comsubs
 import org.rsmod.content.interfaces.bank.configs.bank_constants
 import org.rsmod.content.interfaces.bank.disableIfEvents
@@ -52,6 +53,7 @@ constructor(
             ifClose(eventBus)
             return
         }
+        closeRunePouchView()
         if (!disableIfEvents) {
             val capacityIncrease = bank_constants.purchasable_capacity
             withdrawCert = false

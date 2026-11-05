@@ -5,4 +5,6 @@ plugins {
 
 dependencies {
     implementation(projects.api.pluginCommons)
+    integrationImplementation(projects.content.interfaces.bank)
+    integrationImplementation(projects.api.combat.combatWeapon)
 }

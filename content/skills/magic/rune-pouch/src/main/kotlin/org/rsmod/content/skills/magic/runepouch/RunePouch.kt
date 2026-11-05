@@ -34,6 +34,8 @@ object RunePouch {
 
     fun compactId(obj: String): Int? = compactIds[obj]
 
+    fun runeForCompactId(compactId: Int): String? = runesByCompactId[compactId]
+
     fun isRune(obj: String): Boolean = obj in compactIds
 
     fun slotCount(player: Player): Int =

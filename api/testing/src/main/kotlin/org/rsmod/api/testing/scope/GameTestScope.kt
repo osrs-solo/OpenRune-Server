@@ -26,6 +26,7 @@ import net.rsprot.protocol.game.incoming.locs.OpLocV2
 import net.rsprot.protocol.game.incoming.misc.user.MoveGameClick
 import net.rsprot.protocol.game.incoming.npcs.OpNpcV2
 import net.rsprot.protocol.game.incoming.resumed.ResumePCountDialog
+import net.rsprot.protocol.game.incoming.resumed.ResumePObjDialog
 import net.rsprot.protocol.game.outgoing.misc.player.MessageGame
 import net.rsprot.protocol.util.CombinedId
 import org.junit.jupiter.api.Assertions
@@ -44,6 +45,7 @@ import org.rsmod.api.net.rsprot.handlers.MoveGameClickHandler
 import org.rsmod.api.net.rsprot.handlers.OpLocHandler
 import org.rsmod.api.net.rsprot.handlers.OpNpcHandler
 import org.rsmod.api.net.rsprot.handlers.ResumePCountDialogHandler
+import org.rsmod.api.net.rsprot.handlers.ResumePObjDialogHandler
 import org.rsmod.api.npc.apPlayer2
 import org.rsmod.api.npc.hit.NpcDamageContributor
 import org.rsmod.api.npc.hit.NpcHitpointsFloorHook
@@ -179,6 +181,7 @@ constructor(
     private val ifButtonDHandler: IfButtonDHandler,
     private val gameClickHandler: MoveGameClickHandler,
     private val resumePCountDialog: ResumePCountDialogHandler,
+    private val resumePObjDialog: ResumePObjDialogHandler,
     private val opLocHandler: OpLocHandler,
     private val opNpcHandler: OpNpcHandler,
     private val aiPlayerInteractions: AiPlayerInteractions,
@@ -466,6 +469,10 @@ constructor(
     public fun Player.resumeCountDialog(count: Int) {
         val message = ResumePCountDialog(count)
         captureClient.queue(resumePCountDialog, message)
+    }
+
+    public fun Player.resumeObjDialog(obj: Int) {
+        captureClient.queue(resumePObjDialog, ResumePObjDialog(obj))
     }
 
     public fun Player.moveGameClick(dest: CoordGrid, keyCombination: Int = 0) {

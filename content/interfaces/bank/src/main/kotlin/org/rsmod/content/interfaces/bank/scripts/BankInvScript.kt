@@ -7,6 +7,7 @@ import dev.openrune.types.ItemServerType
 import dev.openrune.types.aconverted.interf.IfButtonOp
 import dev.openrune.util.Wearpos
 import jakarta.inject.Inject
+import jakarta.inject.Singleton
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -39,6 +40,9 @@ import org.rsmod.content.interfaces.bank.configs.bank_constants
 import org.rsmod.content.interfaces.bank.insertMode
 import org.rsmod.content.interfaces.bank.lastQtyInput
 import org.rsmod.content.interfaces.bank.leftClickQtyMode
+import org.rsmod.content.interfaces.bank.openRunePouchView
+import org.rsmod.content.interfaces.bank.runePouchViewOpen
+import org.rsmod.content.interfaces.bank.syncRunePouchView
 import org.rsmod.content.interfaces.bank.selectedTab
 import org.rsmod.content.interfaces.bank.setBankWornBonuses
 import org.rsmod.content.interfaces.bank.setBanksideExtraOps
@@ -49,6 +53,7 @@ import org.rsmod.content.interfaces.bank.util.offset
 import org.rsmod.content.interfaces.bank.util.rightShift
 import org.rsmod.content.interfaces.bank.util.shiftInsert
 import org.rsmod.content.interfaces.bank.withdrawCert
+import org.rsmod.content.skills.magic.runepouch.RunePouch
 import org.rsmod.events.EventBus
 import org.rsmod.game.entity.Player
 import org.rsmod.game.inv.InvObj
@@ -76,6 +81,7 @@ import org.rsmod.plugin.scripts.ScriptContext
  * likely be the best approach. This should be straightforward as long as strict accuracy to the
  * original system is not a requirement.
  */
+@Singleton
 class BankInvScript
 @Inject
 constructor(
@@ -149,6 +155,10 @@ constructor(
                 IfButtonOp.Op9 -> obj.count
                 else -> throw IllegalStateException("Invalid main inv op: $op")
             }
+        val placehold = alwaysPlacehold || op == IfButtonOp.Op9
+        if (player.runePouchViewOpen && withdrawIntoPouch(slot, count, placehold)) {
+            return
+        }
         val transaction =
             invMoveFromSlot(
                 from = bank,
@@ -157,7 +167,7 @@ constructor(
                 count = count,
                 strict = false,
                 cert = withdrawCert,
-                placehold = alwaysPlacehold || op == IfButtonOp.Op9,
+                placehold = placehold,
             )
         val result = transaction[0]
 
@@ -216,12 +226,128 @@ constructor(
         invDeposit(slot, count, inv)
     }
 
-    /** The bankside's "Configure" op, shown on rune pouches, runs the obj's own first op. */
-    private suspend fun ProtectedAccess.configureFromBankside(slot: Int) {
+    private fun ProtectedAccess.configureFromBankside(slot: Int) {
         val obj = inv[slot] ?: return resendSlot(inv, 0)
-        if (getInvObj(obj).hasInvOp(1)) {
-            opHeld1(slot)
+        val internal = RSCM.getReverseMapping(RSCMType.OBJ, obj.id)
+        if (internal in RunePouch.pouches) {
+            player.openRunePouchView(internal)
         }
+    }
+
+    /**
+     * Moves up to [requested] of the rune in bank [slot] into the rune pouch the bankside is
+     * showing. Returns `false` when the pouch cannot take any, so the caller withdraws normally.
+     */
+    fun ProtectedAccess.withdrawIntoPouch(slot: Int, requested: Int, placehold: Boolean): Boolean {
+        val obj = bank[slot] ?: return false
+        val rune = RSCM.getReverseMapping(RSCMType.OBJ, obj.id)
+        if (!RunePouch.isRune(rune)) return false
+        val target = RunePouch.slotFor(player, rune) ?: return false
+        val stored = RunePouch.slot(player, target)?.second ?: 0
+        val amount = minOf(requested, obj.count, RunePouch.CAPACITY - stored)
+        if (amount <= 0) return false
+        return removeFromBank(slot, obj.id, amount, placehold) {
+            RunePouch.setSlot(player, target, rune, stored + amount)
+        }
+    }
+
+    /**
+     * Deletes exactly [count] of [objId] from bank [slot] and hands them to [receive] before
+     * tidying the tab, so a tab-bookkeeping failure can never strand the removed objs.
+     */
+    fun ProtectedAccess.removeFromBank(
+        slot: Int,
+        objId: Int,
+        count: Int,
+        placehold: Boolean,
+        receive: () -> Unit,
+    ): Boolean {
+        if (bank[slot]?.id != objId) return false
+        val query =
+            player.invTransaction(bank) {
+                val bankInv = select(bank)
+                delete {
+                    this.from = bankInv
+                    this.obj = objId
+                    this.strictCount = count
+                    this.strictSlot = slot
+                    this.placehold = placehold
+                }
+            }
+        if (!query.success) return false
+        receive()
+        if (bank[slot] == null && BankTab.forSlot(this, slot) != null) {
+            notifySlotUpdate(slot)
+        }
+        return true
+    }
+
+    /**
+     * Inserts up to [count] of [objId] into the bank the way a bankside deposit would (existing
+     * stack or placeholder first, else the end of the selected tab). Returns how many went in; the
+     * caller then removes exactly that many from wherever they came from.
+     */
+    fun ProtectedAccess.depositIntoBank(objId: Int, count: Int): Int {
+        if (count <= 0) return 0
+        val (prioritySlot, tab) = prepareDepositSlot(objId)
+        val tabSlots = tab.slotRange(this)
+        val insertQuery =
+            player.invTransaction(bank) {
+                val bankInv = select(bank)
+                if (prioritySlot == null && !tab.isMainTab) {
+                    rightShift {
+                        this.from = bankInv
+                        this.startSlot = tabSlots.last + 1
+                        this.shiftCount = 1
+                    }
+                }
+                insert {
+                    this.into = bankInv
+                    this.obj = objId
+                    this.count = count
+                    this.slot = prioritySlot ?: tabSlots.first
+                    this.capacity = bankCapacity
+                }
+            }
+        val result = insertQuery.results.last()
+        if (result == TransactionResult.NotEnoughSpace && bank.occupiedSpace() >= bankCapacity) {
+            mes("You don't have enough space in your bank account.")
+            return 0
+        }
+        if (result !is TransactionResult.Ok || result.completed <= 0) {
+            mes("You already have a full stack of that item in the bank.")
+            return 0
+        }
+        if (bank[tabSlots.last + 1]?.id == objId) {
+            tab.increaseSize(this)
+        }
+        if (!result.fullSuccess) {
+            mes("You already have a full stack of that item in the bank.")
+        }
+        return result.completed
+    }
+
+    private fun ProtectedAccess.prepareDepositSlot(objId: Int): Pair<Int?, BankTab> {
+        val placeholder = placeholder(checkNotNull(ServerCacheManager.getItem(objId)))
+        val tab = selectedTab
+        val containedObjSlot = bank.indexOfFirst { it?.id == objId || it?.id == placeholder.id }
+        val prioritySlot =
+            if (containedObjSlot != -1) {
+                containedObjSlot
+            } else {
+                tab.slotRange(this).firstOrNull { bank[it] == null }
+            }
+        // Mainly done for emulation purposes - compress all other bank tabs. This is not done
+        // for main bank tab.
+        if (prioritySlot == null && !tab.isMainTab) {
+            val others = BankTab.entries - tab
+            for (other in others) {
+                val slots = other.slotRange(this)
+                compressTabObjs(other)
+                trimGapsAndReturnTrailingGaps(slots)
+            }
+        }
+        return prioritySlot to tab
     }
 
     public fun ProtectedAccess.invDeposit(slot: Int, count: Int, inventory: Inventory): Boolean {
@@ -238,27 +364,7 @@ constructor(
             return false
         }
 
-        val tab = selectedTab
-
-        val placeholder = placeholder(objType)
-        val containedObjSlot = bank.indexOfFirst { it?.id == obj.id || it?.id == placeholder.id }
-        val prioritySlot =
-            if (containedObjSlot != -1) {
-                containedObjSlot
-            } else {
-                tab.slotRange(this).firstOrNull { bank[it] == null }
-            }
-
-        // Mainly done for emulation purposes - compress all other bank tabs. This is not done
-        // for main bank tab.
-        if (prioritySlot == null && !tab.isMainTab) {
-            val others = BankTab.entries - tab
-            for (other in others) {
-                val slots = other.slotRange(this)
-                compressTabObjs(other)
-                trimGapsAndReturnTrailingGaps(slots)
-            }
-        }
+        val (prioritySlot, tab) = prepareDepositSlot(obj.id)
 
         val tabSlots = tab.slotRange(this)
         val insertQuery =
@@ -312,6 +418,7 @@ constructor(
         }
 
         setBanksideExtraOps()
+        player.syncRunePouchView()
         return true
     }
 
@@ -340,6 +447,7 @@ constructor(
             return
         }
         depositInventory(inv)
+        player.syncRunePouchView()
     }
 
     public fun ProtectedAccess.depositWorn() {

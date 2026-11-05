@@ -2922,6 +2922,16 @@ public class ProtectedAccess(
     }
 
     /**
+     * Waits for an obj picked from a picker the client draws itself (it answers with
+     * `resume_objdialog`), without opening the chatbox obj search.
+     *
+     * @throws ProtectedAccessLostException if the player could not retain protected access after
+     *   the coroutine suspension.
+     */
+    public suspend fun awaitObjSelection(): ItemServerType =
+        await(ResumePObjDialogInput::class).obj
+
+    /**
      * Returns `true` if the player selects the "Yes" confirmation to destroy the specified obj.
      *
      * @throws ProtectedAccessLostException if the player could not retain protected access after
