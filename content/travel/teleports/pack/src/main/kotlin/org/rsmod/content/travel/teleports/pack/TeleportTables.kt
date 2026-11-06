@@ -238,6 +238,30 @@ object TeleportTables {
                     Destination("Lemantolly Undri", 2550, 2970),
                     Destination("Ookookolly Undri", 2711, 2803),
                 ),
+            "charter" to
+                listOf(
+                    Destination("Port Sarim", 3038, 3192),
+                    Destination("Brimhaven", 2760, 3238),
+                    Destination("Catherby", 2792, 3414),
+                    Destination("Mos Le'Harmless", 3671, 2931),
+                    Destination("Musa Point", 2954, 3158),
+                    Destination("Port Khazard", 2674, 3144),
+                    Destination("Port Phasmatys", 3702, 3503),
+                    Destination("Shipyard", 3001, 3032),
+                    Destination("Port Tyras", 2142, 3122),
+                    Destination("Corsair Cove", 2589, 2851),
+                    Destination("Prifddinas", 2157, 3330),
+                    Destination("Port Piscarilius", 1808, 3679),
+                    Destination("Land's End", 1496, 3403),
+                    Destination("Civitas illa Fortis", 1743, 3136),
+                    Destination("Aldarin", 1455, 2968),
+                    Destination("Sunset Coast", 1514, 2971),
+                    Destination("The Pandemonium", 3064, 2999),
+                    Destination("The Summer Shore", 3189, 2369),
+                    Destination("Red Rock", 2805, 2502),
+                    Destination("Deepfin Point", 1943, 2757),
+                    Destination("Port Roberts", 1871, 3309),
+                ),
         )
 
     val ITEMS: List<Item> =

@@ -174,6 +174,11 @@ without The Grand Tree, One Small Favour or Monkey Madness II, and pilots skip t
 forms. Captain Errdo's `Talk-to` at the Digsite opens the map, so Lemanto Andra is two-way here
 (it is arrival-only in OSRS).
 
+Charter ships use the `charter` rows. They are free, open from a plain list rather than the
+Sailing-era charter map, and land on the dock instead of the ship's deck (gangplanks are not
+usable yet). Tempestus, Crandor and Barracuda HQ from Jagex's `chartering_destinations` are not
+stops.
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,
