@@ -235,6 +235,7 @@ constructor(
         if (!spendCharge(item, inv, slot)) {
             return
         }
+        ifClose()
         actionDelay = mapClock + ACTION_DELAY
         item.departMessage?.let(::mes)
         anim(TELEPORT_ANIM)

@@ -150,4 +150,10 @@ Destinations live in the `teleport_destination` dbtable and the items that use t
   do), so every copy a player owns shares one pool. Uncharging refunds that pool once.
 - The slayer ring's `Rub` (contact master) and the ring of wealth's `Features` are not implemented.
 
+Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
+list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
+listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,
+only the message. Fairy rings read Jagex's own `dbtable.fairyring` and need a dramen or lunar staff,
+but no quest progress.
+
 [magic-numbers]: https://en.wikipedia.org/wiki/Magic_number_(programming)

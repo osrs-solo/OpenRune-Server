@@ -69,20 +69,12 @@ object TeleportItems {
         buildMap { all.forEach { item -> item.objs.forEach { put(it, item) } } }
     }
 
-    private fun load(): List<TeleportItem> {
-        val networks =
-            TeleportDestinationRow.all()
-                .groupBy { it.network }
-                .mapValues { (_, rows) ->
-                    rows.sortedBy { it.ordinal }.map {
-                        TeleportDestination(it.name, it.coords, it.wilderness)
-                    }
-                }
-        return TeleportItemRow.all().map { row ->
+    private fun load(): List<TeleportItem> =
+        TeleportItemRow.all().map { row ->
             TeleportItem(
                 label = row.label,
                 objs = row.objs.map { it.rscm() },
-                destinations = networks[row.network] ?: error("No destinations for ${row.network}"),
+                destinations = TeleportNetworks.of(row.network),
                 teleportType = TeleportType.valueOf(row.teleportType),
                 uncharged = row.uncharged?.rscm(),
                 unlimited = row.unlimited,
@@ -95,7 +87,22 @@ object TeleportItems {
                 arriveMessage = row.arriveMessage,
             )
         }
-    }
 
     private fun ItemServerType.rscm(): String = RSCM.getReverseMapping(RSCMType.OBJ, id)
+}
+
+/** Every network in `teleport_destination`, each in the order its rows are numbered. */
+object TeleportNetworks {
+    private val all: Map<String, List<TeleportDestination>> by lazy {
+        TeleportDestinationRow.all()
+            .groupBy { it.network }
+            .mapValues { (_, rows) ->
+                rows.sortedBy { it.ordinal }.map {
+                    TeleportDestination(it.name, it.coords, it.wilderness)
+                }
+            }
+    }
+
+    fun of(network: String): List<TeleportDestination> =
+        all[network] ?: error("No teleport destinations for network `$network`.")
 }

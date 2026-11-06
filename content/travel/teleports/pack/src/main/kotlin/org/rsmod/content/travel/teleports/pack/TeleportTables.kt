@@ -178,6 +178,17 @@ object TeleportTables {
                 ),
             "royal_seed_pod" to listOf(Destination("Grand Tree", 2465, 3495)),
             "ectophial" to listOf(Destination("Ectofuntus", 3659, 3522)),
+            "spirit_tree" to
+                listOf(
+                    Destination("Tree Gnome Village", 2542, 3170),
+                    Destination("Gnome Stronghold", 2461, 3444),
+                    Destination("Battlefield of Khazard", 2555, 3259),
+                    Destination("Grand Exchange", 3185, 3508),
+                    Destination("Feldip Hills", 2488, 2850),
+                    Destination("Prifddinas", 3274, 6123),
+                    Destination("Poison Waste", 2339, 3109),
+                    Destination("Laguna Aurorae", 1202, 2785),
+                ),
         )
 
     val ITEMS: List<Item> =
