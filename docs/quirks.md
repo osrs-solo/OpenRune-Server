@@ -154,12 +154,19 @@ Destinations live in the `teleport_destination` dbtable and the items that use t
   charge is spent.
 - All items use the standard jewellery teleport animation; the ectophial, seed pod and Xeric's
   talisman do not play their own.
-- Ardougne cloak farm teleports have no daily limit.
+- Achievement diary rewards (Ardougne cloak, Karamja gloves, desert amulet, Morytania legs,
+  Fremennik sea boots, Kandarin headgear, wilderness sword, western banner, Explorer's ring, Rada's
+  blessing) teleport without their daily limits. Tiers that cannot teleport in OSRS (desert amulet
+  1, western banner 1 and 2, and so on) still cannot.
 - Kharedst's memoirs and the Book of the Dead spend `veos_memoir_charges`, but recharging at the
   Old Memorial and adding pages are not implemented.
 - Xeric's talisman and memoir charges sit in player varbits (as the cache's `charges_*` varbits
   do), so every copy a player owns shares one pool. Uncharging refunds that pool once.
 - The slayer ring's `Rub` (contact master) and the ring of wealth's `Features` are not implemented.
+
+Wilderness obelisks use the `wilderness_obelisk` rows. `Set Destination` and `Teleport to
+Destination` need no Wilderness diary and do not remember a choice: both open the list and send
+the pad straight to the picked obelisk.
 
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are

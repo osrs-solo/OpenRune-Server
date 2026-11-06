@@ -62,7 +62,7 @@ data class ItemServerType(
         private val DEFAULT_OPTIONS: EntityOpsDefinition = EntityOpsBuilder().op(2, "Take").build()
 
         /** Greegrees and a few tools say Hold rather than Wield, and still go in the weapon slot. */
-        private val EQUIP_OPS: Set<String> = setOf("Wield", "Wear", "Hold")
+        private val EQUIP_OPS: Set<String> = setOf("Wield", "Wear", "Hold", "Equip")
     }
 
     val internalName

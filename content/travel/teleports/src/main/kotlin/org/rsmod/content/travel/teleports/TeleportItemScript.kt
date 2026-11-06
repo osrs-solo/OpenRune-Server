@@ -73,12 +73,11 @@ constructor(
         val wearOp = type.paramOrNull(params.wear_op_index)
         fun usable(index: Int) = index != -1 && index + 1 != wearOp
 
-        val directOps = ops.indices.filter { usable(it) && ops[it]?.endsWith(" Teleport") == true }
+        val directOps = directHeldOps(item, ops, ::usable)
         val menuOp =
             MENU_OPS.firstNotNullOfOrNull { name -> ops.indexOf(name).takeIf(::usable) } ?: -1
         if (directOps.isNotEmpty()) {
-            for ((index, op) in directOps.withIndex()) {
-                val destination = item.destinations.getOrNull(index) ?: break
+            for ((op, destination) in directOps) {
                 onHeldOp(op, obj) { inv, slot -> teleport(item, inv, slot, destination) }
             }
         } else if (menuOp != -1) {
@@ -115,6 +114,35 @@ constructor(
             onHeldOp(uncharge, obj) { inv, slot -> uncharge(item, inv, slot) }
         }
         registerWorn(item, obj, type)
+    }
+
+    /**
+     * Held ops that go straight to one destination: an op named after a destination ("Gem Mine",
+     * "Nardah"), or an op called "... Teleport" ("Monastery Teleport"), which takes the next
+     * destination in order.
+     */
+    private fun directHeldOps(
+        item: TeleportItem,
+        ops: List<String?>,
+        usable: (Int) -> Boolean,
+    ): Map<Int, TeleportDestination> {
+        val byName = item.destinations.associateBy { it.name }
+        var next = 0
+        val direct = linkedMapOf<Int, TeleportDestination>()
+        for ((index, op) in ops.withIndex()) {
+            if (op == null || !usable(index)) {
+                continue
+            }
+            val destination =
+                byName[op]
+                    ?: item.destinations.getOrNull(next).takeIf { op.endsWith(" Teleport") }
+                    ?: continue
+            if (byName[op] == null) {
+                next++
+            }
+            direct[index] = destination
+        }
+        return direct
     }
 
     private fun ScriptContext.registerWorn(item: TeleportItem, obj: String, type: ItemServerType) {

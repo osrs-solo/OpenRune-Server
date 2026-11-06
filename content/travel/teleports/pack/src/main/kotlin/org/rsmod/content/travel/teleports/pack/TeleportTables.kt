@@ -189,6 +189,45 @@ object TeleportTables {
                     Destination("Poison Waste", 2339, 3109),
                     Destination("Laguna Aurorae", 1202, 2785),
                 ),
+            "karamja_gloves_3" to listOf(Destination("Gem Mine", 2840, 9387)),
+            "karamja_gloves_4" to
+                listOf(
+                    Destination("Gem Mine", 2840, 9387),
+                    Destination("Slayer Master", 2869, 2982, level = 1),
+                ),
+            "desert_amulet" to listOf(Destination("Nardah", 3420, 2917)),
+            "desert_amulet_4" to
+                listOf(
+                    Destination("Nardah", 3426, 2927),
+                    Destination("Kalphite cave", 3322, 3122),
+                ),
+            "morytania_legs" to listOf(Destination("Ectofuntus Pit", 3683, 9888)),
+            "morytania_legs_3" to
+                listOf(
+                    Destination("Ectofuntus Pit", 3683, 9888),
+                    Destination("Burgh de Rott", 3482, 3230),
+                ),
+            "fremennik_sea_boots" to listOf(Destination("Rellekka", 2643, 3675)),
+            "kandarin_headgear" to listOf(Destination("Sherlock", 2730, 3420)),
+            "wilderness_sword" to
+                listOf(Destination("Fountain of Rune", 3377, 3890, wilderness = true)),
+            "western_banner" to listOf(Destination("Piscatoris Fishing Colony", 2332, 3681)),
+            "explorers_ring" to listOf(Destination("Cabbage patch", 3052, 3291)),
+            "radas_blessing" to listOf(Destination("Kourend Woodland", 1554, 3461)),
+            "radas_blessing_3" to
+                listOf(
+                    Destination("Kourend Woodland", 1554, 3461),
+                    Destination("Mount Karuulm", 1310, 3796),
+                ),
+            "wilderness_obelisk" to
+                listOf(
+                    Destination("Level 13", 3156, 3620, wilderness = true),
+                    Destination("Level 19", 3227, 3667, wilderness = true),
+                    Destination("Level 27", 3035, 3732, wilderness = true),
+                    Destination("Level 35", 3106, 3794, wilderness = true),
+                    Destination("Level 44", 2980, 3866, wilderness = true),
+                    Destination("Level 50", 3307, 3916, wilderness = true),
+                ),
         )
 
     val ITEMS: List<Item> =
@@ -359,6 +398,72 @@ object TeleportTables {
                 departMessage = "You empty the ectoplasm onto the ground around your feet...",
                 arriveMessage = "...and the world changes around you.",
             ),
+            diary("karamja_gloves_3", "gloves", "obj.atjun_gloves_hard"),
+            diary("karamja_gloves_4", "gloves", "obj.atjun_gloves_elite"),
+            diary("desert_amulet", "amulet", "obj.desert_amulet_medium", "obj.desert_amulet_hard"),
+            diary("desert_amulet_4", "amulet", "obj.desert_amulet_elite"),
+            diary("morytania_legs", "legs", "obj.morytania_legs_easy", "obj.morytania_legs_medium"),
+            diary(
+                "morytania_legs_3",
+                "legs",
+                "obj.morytania_legs_hard",
+                "obj.morytania_legs_elite",
+            ),
+            diary(
+                "fremennik_sea_boots",
+                "boots",
+                "obj.fremennik_boots_easy",
+                "obj.fremennik_boots_medium",
+                "obj.fremennik_boots_hard",
+                "obj.fremennik_boots_elite",
+            ),
+            diary(
+                "kandarin_headgear",
+                "headgear",
+                "obj.seers_headband_hard",
+                "obj.seers_headband_elite",
+            ),
+            diary(
+                "wilderness_sword",
+                "sword",
+                "obj.wilderness_sword_hard",
+                "obj.wilderness_sword_elite",
+            ),
+            diary(
+                "western_banner",
+                "banner",
+                "obj.western_banner_hard",
+                "obj.western_banner_elite",
+            ),
+            diary(
+                "explorers_ring",
+                "ring",
+                "obj.lumbridge_ring_medium",
+                "obj.lumbridge_ring_hard",
+                "obj.lumbridge_ring_elite",
+            ),
+            diary(
+                "radas_blessing",
+                "blessing",
+                "obj.zeah_blessing_easy",
+                "obj.zeah_blessing_medium",
+            ),
+            diary(
+                "radas_blessing_3",
+                "blessing",
+                "obj.zeah_blessing_hard",
+                "obj.zeah_blessing_elite",
+            ),
+        )
+
+    /** An achievement diary reward whose teleports, like every tier here, have no daily limit. */
+    private fun diary(network: String, label: String, vararg objs: String) =
+        Item(
+            key = network,
+            network = network,
+            label = label,
+            objs = objs.toList(),
+            unlimited = true,
         )
 
     fun destinationRow(network: String, ordinal: Int): String =
