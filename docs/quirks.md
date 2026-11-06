@@ -168,6 +168,12 @@ Wilderness obelisks use the `wilderness_obelisk` rows. `Set Destination` and `Te
 Destination` need no Wilderness diary and do not remember a choice: both open the list and send
 the pad straight to the picked obelisk.
 
+Gnome gliders use the `glider` rows. Every glider, including Feldip Hills and Ape Atoll, is open
+without The Grand Tree, One Small Favour or Monkey Madness II, and pilots skip their dialogue.
+`varbit.pilot_multinpc_var` is set on login so the Feldip and Ape Atoll pilots show their glider
+forms. Captain Errdo's `Talk-to` at the Digsite opens the map, so Lemanto Andra is two-way here
+(it is arrival-only in OSRS).
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,

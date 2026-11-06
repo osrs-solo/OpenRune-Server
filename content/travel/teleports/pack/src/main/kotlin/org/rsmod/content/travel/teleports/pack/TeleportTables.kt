@@ -228,6 +228,16 @@ object TeleportTables {
                     Destination("Level 44", 2980, 3866, wilderness = true),
                     Destination("Level 50", 3307, 3916, wilderness = true),
                 ),
+            "glider" to
+                listOf(
+                    Destination("Ta Quir Priw", 2465, 3501, level = 3),
+                    Destination("Gandius", 2971, 2968),
+                    Destination("Kar-Hewo", 3284, 3210),
+                    Destination("Lemanto Andra", 3321, 3429),
+                    Destination("Sindarpos", 2850, 3498),
+                    Destination("Lemantolly Undri", 2550, 2970),
+                    Destination("Ookookolly Undri", 2711, 2803),
+                ),
         )
 
     val ITEMS: List<Item> =
