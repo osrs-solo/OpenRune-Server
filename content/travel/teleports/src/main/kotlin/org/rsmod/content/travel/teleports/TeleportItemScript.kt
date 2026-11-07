@@ -295,7 +295,7 @@ constructor(
         private const val MENU_TITLE = "Where would you like to teleport to?"
         private const val NOWHERE = "Nowhere"
 
-        private val MENU_OPS = listOf("Teleport", "Rub", "Reminisce", "Commune", "Empty")
+        private val MENU_OPS = listOf("Teleport", "Rub", "Reminisce", "Commune", "Empty", "Squash")
         private val CHECK_OPS = listOf("Check", "Check-charge")
 
         /** Worn op 1 is `Remove`; the obj's `wear_op1` param is worn op 2. */

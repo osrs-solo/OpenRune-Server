@@ -322,6 +322,12 @@ object TeleportTables {
                     Destination("Trouble Brewing", 3801, 3015),
                     Destination("TzHaar Fight Pit", 2399, 5177),
                 ),
+            "camulet" to
+                listOf(
+                    Destination("Enakhra's Temple", 3105, 9315, level = 2),
+                    Destination("Enakhra's Temple Entrance", 3191, 2924),
+                ),
+            "grand_seed_pod" to listOf(Destination("Grand Tree", 2465, 3495)),
         )
 
     val ITEMS: List<Item> =
@@ -547,6 +553,20 @@ object TeleportTables {
                 "blessing",
                 "obj.zeah_blessing_hard",
                 "obj.zeah_blessing_elite",
+            ),
+            Item(
+                key = "camulet",
+                network = "camulet",
+                label = "camulet",
+                objs = listOf("obj.camulet"),
+                unlimited = true,
+            ),
+            Item(
+                key = "grand_seed_pod",
+                network = "grand_seed_pod",
+                label = "seed pod",
+                objs = listOf("obj.aluft_seed_pod"),
+                teleportType = LEVEL_30,
             ),
         )
 

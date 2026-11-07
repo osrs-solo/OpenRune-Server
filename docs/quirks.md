@@ -162,6 +162,8 @@ Destinations live in the `teleport_destination` dbtable and the items that use t
   Old Memorial and adding pages are not implemented.
 - Xeric's talisman and memoir charges sit in player varbits (as the cache's `charges_*` varbits
   do), so every copy a player owns shares one pool. Uncharging refunds that pool once.
+- The camulet has unlimited charges, as if Lazim had upgraded it, and both destinations are open.
+  The grand seed pod is used up by `Squash`; its `Launch` op is not implemented.
 - The slayer ring's `Rub` (contact master) and the ring of wealth's `Features` are not implemented.
 
 Wilderness obelisks use the `wilderness_obelisk` rows. `Set Destination` and `Teleport to
