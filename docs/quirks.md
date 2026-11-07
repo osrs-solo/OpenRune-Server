@@ -183,6 +183,9 @@ Quetzals read Jagex's own `dbtable.quetzal`. Every landing site is marked built 
 Promise and the Hunter landing-site builds are not required), and flights are a fade rather than
 the flying cutscene.
 
+Magic carpets use the `carpet_shantay` and `carpet_pollnivneach` rows (hub first). Rides are free,
+a fade rather than the carpet ride, and need no quests (Uzer, Sophanem and Menaphos included).
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,

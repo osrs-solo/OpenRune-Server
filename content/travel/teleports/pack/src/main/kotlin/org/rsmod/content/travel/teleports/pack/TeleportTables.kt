@@ -262,6 +262,20 @@ object TeleportTables {
                     Destination("Deepfin Point", 1943, 2757),
                     Destination("Port Roberts", 1871, 3309),
                 ),
+            "carpet_shantay" to
+                listOf(
+                    Destination("Shantay Pass", 3311, 3109),
+                    Destination("Uzer", 3467, 3110),
+                    Destination("Bedabin Camp", 3182, 3043),
+                    Destination("Pollnivneach", 3350, 3001),
+                ),
+            "carpet_pollnivneach" to
+                listOf(
+                    Destination("Pollnivneach", 3348, 2942),
+                    Destination("Nardah", 3401, 2918),
+                    Destination("Sophanem", 3287, 2813),
+                    Destination("Menaphos", 3243, 2813),
+                ),
         )
 
     val ITEMS: List<Item> =
