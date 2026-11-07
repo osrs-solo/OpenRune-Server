@@ -179,6 +179,10 @@ Sailing-era charter map, and land on the dock instead of the ship's deck (gangpl
 usable yet). Tempestus, Crandor and Barracuda HQ from Jagex's `chartering_destinations` are not
 stops.
 
+Quetzals read Jagex's own `dbtable.quetzal`. Every landing site is marked built on login (Twilight's
+Promise and the Hunter landing-site builds are not required), and flights are a fade rather than
+the flying cutscene.
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,
