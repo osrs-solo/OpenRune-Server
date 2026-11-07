@@ -190,6 +190,11 @@ Minecarts use the `lovakengj_minecart` rows (any station to any other, free with
 Tower) and the `keldagrim_cart` rows (Keldagrim first; the Grand Exchange trapdoor and the Ice
 Mountain and White Wolf Mountain carts lead back to it). Rides are a fade with no fare.
 
+Boats, ferries and rowboats come from `dbtable.teleport_route`, generated from the shortest-path
+plugin's ship and boat lists (91 routes). They are free, need no quests, and sail with a fade.
+Routes whose op did not match the cache (some Rellekka boats, Waterbirth's Jarvald, and a few
+others) are not bound, and the Entrana and Void Knight ferries keep their own scripts.
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,

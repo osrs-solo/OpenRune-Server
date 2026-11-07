@@ -5,5 +5,9 @@ import dev.openrune.pack.PluginPack
 
 class TeleportsPluginPack : PluginPack() {
     override fun dbTables(): List<DBTable> =
-        listOf(TeleportTables.destinations(), TeleportTables.items())
+        listOf(
+            TeleportTables.destinations(),
+            TeleportTables.items(),
+            TeleportRouteTable.routes(),
+        )
 }
