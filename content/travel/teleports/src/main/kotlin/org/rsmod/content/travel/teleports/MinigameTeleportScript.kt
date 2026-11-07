@@ -10,12 +10,16 @@ import org.rsmod.api.area.checker.AreaChecker
 import org.rsmod.api.player.hook.PlayerTeleportValidator
 import org.rsmod.api.player.hook.TeleportType
 import org.rsmod.api.player.output.ChatType
+import org.rsmod.api.player.output.clearMapFlag
 import org.rsmod.api.player.protect.ProtectedAccess
 import org.rsmod.api.player.ui.ifSetEvents
 import org.rsmod.api.script.onIfModalButton
 import org.rsmod.api.script.onIfOverlayButton
 import org.rsmod.api.script.onPlayerLogin
+import org.rsmod.api.script.onPlayerQueueWithArgs
 import org.rsmod.api.table.MinigameTeleportRow
+import org.rsmod.api.utils.time.epochMinute
+import org.rsmod.map.CoordGrid
 import org.rsmod.plugin.scripts.PluginScript
 import org.rsmod.plugin.scripts.ScriptContext
 
@@ -57,6 +61,7 @@ constructor(
         for (tile in 1..LIST_TILES) {
             onIfModalButton("component.minigames:minigame_$tile") { teleport(listGameId(tile)) }
         }
+        onPlayerQueueWithArgs<PendingTeleport>(QUEUE) { processTeleport(it.args) }
     }
 
     /** The Minigame Teleport spell opens the scrolling list of every minigame. */
@@ -86,7 +91,11 @@ constructor(
         }
     }
 
-    private suspend fun ProtectedAccess.teleport(gameId: Int) {
+    /**
+     * Same staged cast as Home Teleport: a weak queue steps through the chalk circle, book and
+     * portal, so walking away cancels it. The cooldown starts only once the player lands.
+     */
+    private fun ProtectedAccess.teleport(gameId: Int) {
         val landing = landings[gameId]
         if (landing == null) {
             mes("Select a minigame from the list first.")
@@ -95,20 +104,78 @@ constructor(
         if (actionDelay > mapClock) {
             return
         }
-        val denial = teleportValidator.validate(player, TeleportType.Minigame, areaChecker)
-        if (denial != null) {
-            mes(denial, ChatType.Engine)
+        // UNVERIFIED: refusal wording while moving or in combat copies Home Teleport's
+        if (player.routeDestination.isNotEmpty() || isInCombat()) {
+            mes("You can't use that teleport at the moment.")
+            return
+        }
+        val minutesLeft = COOLDOWN_MINUTES - (epochMinute() - vars[TIMER])
+        if (minutesLeft > 0) {
+            // UNVERIFIED: cooldown message wording (guess)
+            val unit = if (minutesLeft == 1) "minute" else "minutes"
+            mes("You need to wait another $minutesLeft $unit to use a minigame teleport.")
+            return
+        }
+        if (!canTeleport()) {
             return
         }
         ifClose()
-        actionDelay = mapClock + CAST_TICKS + 1
-        anim(CAST_ANIM)
-        spotanim(CAST_SPOTANIM, height = CAST_SPOTANIM_HEIGHT)
-        delay(CAST_TICKS)
-        telejump(landing.coords, TeleportType.Exempt)
-        anim(LAND_ANIM)
-        mes("You teleport to ${landing.name}.")
+        player.clearMapFlag()
+        resetAnim()
+        resetSpotanim()
+        walkTrigger(CANCEL_ANIM_WALK_TRIGGER)
+        clearWeakQueue(QUEUE)
+        val task = PendingTeleport(landing.coords.packed, gameId, stage = 0)
+        weakQueue(QUEUE, STAGES.first().tick + SAME_TICK_QUEUE, task)
     }
+
+    private suspend fun ProtectedAccess.processTeleport(task: PendingTeleport) {
+        val stage = STAGES[task.stage]
+        if (stage.spotanim != null) {
+            spotanim(stage.spotanim, height = stage.spotanimHeight)
+        }
+        anim(stage.anim)
+        val next = STAGES.getOrNull(task.stage + 1)
+        if (next != null) {
+            val cycles = next.tick - stage.tick + SAME_TICK_QUEUE
+            weakQueue(QUEUE, cycles, task.copy(stage = task.stage + 1))
+            return
+        }
+
+        vars[BUSY] = 1
+        delay(LANDING_TICK - stage.tick)
+        player.clearWalkTrigger()
+        val allowed = canTeleport()
+        if (allowed) {
+            vars[TIMER] = epochMinute()
+        }
+        vars[BUSY] = 0
+        if (allowed) {
+            telejump(CoordGrid(task.destination), TeleportType.Exempt)
+            landings[task.gameId]?.let { mes("You teleport to ${it.name}.") }
+        }
+        resetAnim()
+        resetSpotanim()
+    }
+
+    private fun ProtectedAccess.canTeleport(): Boolean {
+        val denial = teleportValidator.validate(player, TeleportType.Minigame, areaChecker)
+        if (denial == null) {
+            return true
+        }
+        player.clearMapFlag()
+        mes(denial, ChatType.Engine)
+        return false
+    }
+
+    private data class PendingTeleport(val destination: Int, val gameId: Int, val stage: Int)
+
+    private data class Stage(
+        val anim: String,
+        val spotanim: String?,
+        val tick: Int,
+        val spotanimHeight: Int = 0,
+    )
 
     private companion object {
         private const val NETWORK = "minigame"
@@ -135,10 +202,28 @@ constructor(
                 GROUPING,
             )
 
-        private const val CAST_ANIM = "seq.human_castteleport"
-        private const val LAND_ANIM = "seq.human_castteleport_reverse"
-        private const val CAST_SPOTANIM = "spotanim.teleport_casting"
-        private const val CAST_SPOTANIM_HEIGHT = 92
-        private const val CAST_TICKS = 3
+        private const val QUEUE = "queue.minigame_teleport"
+        private const val TIMER = "varp.slug2_regionuid"
+        private const val COOLDOWN_MINUTES = 20
+        private const val BUSY = "varbit.busy"
+        private const val CANCEL_ANIM_WALK_TRIGGER = "walktrigger.emote_cancelanim"
+        private const val LANDING_TICK = 24
+
+        // A weak queue added before or during queue processing is decremented on that same tick.
+        private const val SAME_TICK_QUEUE = 1
+
+        private val STAGES =
+            listOf(
+                Stage("seq.aide_drawing_chalk_circle", "spotanim.aide_chalk_circle", tick = 1),
+                Stage("seq.aide_sitting_down_crosslegged", spotanim = null, tick = 7),
+                Stage("seq.aide_player_getting_book", "spotanim.aide_player_book_get", tick = 13),
+                Stage(
+                    "seq.aide_reciting_incantation",
+                    "spotanim.aide_player_book_portal",
+                    tick = 17,
+                    spotanimHeight = 65526,
+                ),
+                Stage("seq.aide_player_teleporting", "spotanim.aide_player_teleport", tick = 21),
+            )
     }
 }

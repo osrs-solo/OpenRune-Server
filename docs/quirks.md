@@ -198,8 +198,9 @@ Routes whose op did not match the cache (some Rellekka boats, Waterbirth's Jarva
 others) are not bound, and the Entrana and Void Knight ferries keep their own scripts.
 
 Minigame teleports (Grouping tab) use the `minigame` rows, matched by name to Jagex's
-`minigame_teleport` rows. They use the standard teleport cast rather than the home-teleport
-animation, have no 20-minute cooldown, and need no minigame unlocks. The Minigame Teleport spell
+`minigame_teleport` rows. They play the home-teleport cast and share Jagex's 20-minute cooldown
+(varp 888, which also greys the Grouping Teleport button), but need no minigame unlocks. The
+cooldown message wording is a guess. The Minigame Teleport spell
 opens the scrolling `minigames` list, where Select teleports; the Grouping tab's Teleport button
 works too. The channels tab buttons open their panels.
 
