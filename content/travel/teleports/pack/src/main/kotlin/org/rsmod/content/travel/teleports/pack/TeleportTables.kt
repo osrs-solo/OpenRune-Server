@@ -276,6 +276,28 @@ object TeleportTables {
                     Destination("Sophanem", 3287, 2813),
                     Destination("Menaphos", 3243, 2813),
                 ),
+            "lovakengj_minecart" to
+                listOf(
+                    Destination("Arceuus", 1670, 3833),
+                    Destination("Farming Guild", 1218, 3737),
+                    Destination("Hosidius South", 1808, 3479),
+                    Destination("Hosidius West", 1655, 3543),
+                    Destination("Kingstown", 1699, 3660),
+                    Destination("Kourend Woodland", 1572, 3466),
+                    Destination("Lovakengj", 1518, 3733),
+                    Destination("Mount Quidamortem", 1255, 3548),
+                    Destination("Northern Tundras", 1648, 3931),
+                    Destination("Port Piscarilius", 1761, 3710),
+                    Destination("Shayzien East", 1590, 3620),
+                    Destination("Shayzien West", 1415, 3577),
+                ),
+            "keldagrim_cart" to
+                listOf(
+                    Destination("Keldagrim", 2909, 10174),
+                    Destination("Grand Exchange", 3141, 3504),
+                    Destination("Ice Mountain", 2995, 9835),
+                    Destination("White Wolf Mountain", 2876, 9868),
+                ),
         )
 
     val ITEMS: List<Item> =

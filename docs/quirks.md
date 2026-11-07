@@ -186,6 +186,10 @@ the flying cutscene.
 Magic carpets use the `carpet_shantay` and `carpet_pollnivneach` rows (hub first). Rides are free,
 a fade rather than the carpet ride, and need no quests (Uzer, Sophanem and Menaphos included).
 
+Minecarts use the `lovakengj_minecart` rows (any station to any other, free without The Forsaken
+Tower) and the `keldagrim_cart` rows (Keldagrim first; the Grand Exchange trapdoor and the Ice
+Mountain and White Wolf Mountain carts lead back to it). Rides are a fade with no fare.
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,
