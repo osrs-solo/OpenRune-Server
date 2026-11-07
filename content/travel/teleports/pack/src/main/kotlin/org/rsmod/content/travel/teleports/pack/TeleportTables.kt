@@ -298,6 +298,30 @@ object TeleportTables {
                     Destination("Ice Mountain", 2995, 9835),
                     Destination("White Wolf Mountain", 2876, 9868),
                 ),
+            "minigame" to
+                listOf(
+                    Destination("Barbarian Assault", 2531, 3577),
+                    Destination("Blast Furnace", 2934, 10184),
+                    Destination("Burthorpe Games Room", 2899, 3553),
+                    Destination("Bounty Hunter", 3140, 3626),
+                    Destination("Castle Wars", 2442, 3093),
+                    Destination("Clan Wars", 3150, 3635),
+                    Destination("Fishing Trawler", 2658, 3157),
+                    Destination("Giants' Foundry", 3361, 3149),
+                    Destination("Guardians of the Rift", 3614, 9477),
+                    Destination("Last Man Standing", 3150, 3635),
+                    Destination("Mage Training Arena", 3363, 3295),
+                    Destination("Mastering Mixology", 1388, 2918),
+                    Destination("Nightmare Zone", 2609, 3114),
+                    Destination("Pest Control", 2658, 2663),
+                    Destination("Rat Pits", 2561, 3319),
+                    Destination("Shades of Mort'ton", 3506, 3304),
+                    Destination("Sorceress's Garden", 3319, 3140),
+                    Destination("Soul Wars", 2018, 5929),
+                    Destination("Tithe Farm", 1792, 3501),
+                    Destination("Trouble Brewing", 3801, 3015),
+                    Destination("TzHaar Fight Pit", 2399, 5177),
+                ),
         )
 
     val ITEMS: List<Item> =

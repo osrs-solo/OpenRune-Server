@@ -195,6 +195,11 @@ plugin's ship and boat lists (91 routes). They are free, need no quests, and sai
 Routes whose op did not match the cache (some Rellekka boats, Waterbirth's Jarvald, and a few
 others) are not bound, and the Entrana and Void Knight ferries keep their own scripts.
 
+Minigame teleports (Grouping tab) use the `minigame` rows, matched by name to Jagex's
+`minigame_teleport` rows. They use the standard teleport cast rather than the home-teleport
+animation, have no 20-minute cooldown, and need no minigame unlocks. The channels tab buttons
+open their panels.
+
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
 listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,
