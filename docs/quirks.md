@@ -199,8 +199,9 @@ others) are not bound, and the Entrana and Void Knight ferries keep their own sc
 
 Minigame teleports (Grouping tab) use the `minigame` rows, matched by name to Jagex's
 `minigame_teleport` rows. They use the standard teleport cast rather than the home-teleport
-animation, have no 20-minute cooldown, and need no minigame unlocks. The channels tab buttons
-open their panels.
+animation, have no 20-minute cooldown, and need no minigame unlocks. The Minigame Teleport spell
+opens the scrolling `minigames` list, where Select teleports; the Grouping tab's Teleport button
+works too. The channels tab buttons open their panels.
 
 Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
 list too, so trees still showing their pre-quest form work. Only the eight permanent trees are

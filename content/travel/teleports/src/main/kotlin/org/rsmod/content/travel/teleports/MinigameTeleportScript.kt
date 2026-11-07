@@ -1,6 +1,9 @@
 package org.rsmod.content.travel.teleports
 
+import dev.openrune.ServerCacheManager
 import dev.openrune.definition.type.widget.IfEvent
+import dev.openrune.rscm.RSCM.asRSCM
+import dev.openrune.rscm.RSCMType
 import dev.openrune.types.aconverted.interf.IfSubType
 import jakarta.inject.Inject
 import org.rsmod.api.area.checker.AreaChecker
@@ -9,6 +12,7 @@ import org.rsmod.api.player.hook.TeleportType
 import org.rsmod.api.player.output.ChatType
 import org.rsmod.api.player.protect.ProtectedAccess
 import org.rsmod.api.player.ui.ifSetEvents
+import org.rsmod.api.script.onIfModalButton
 import org.rsmod.api.script.onIfOverlayButton
 import org.rsmod.api.script.onPlayerLogin
 import org.rsmod.api.table.MinigameTeleportRow
@@ -47,6 +51,30 @@ constructor(
             onIfOverlayButton("component.side_channels:tab_$tab") { openTab(tab, panel) }
         }
         onIfOverlayButton(TELEPORT_BUTTON) { teleport(it.comsub) }
+        for (spell in SPELLS) {
+            onIfOverlayButton(spell) { openList() }
+        }
+        for (tile in 1..LIST_TILES) {
+            onIfModalButton("component.minigames:minigame_$tile") { teleport(listGameId(tile)) }
+        }
+    }
+
+    /** The Minigame Teleport spell opens the scrolling list of every minigame. */
+    private fun ProtectedAccess.openList() {
+        ifOpenMainModal(LIST)
+        for (tile in 1..LIST_TILES) {
+            ifSetEvents("component.minigames:minigame_$tile", -1..-1, IfEvent.Op1)
+        }
+    }
+
+    /**
+     * `minigames_init` lays out tile `minigame_N` for entry N - 1 of the list enum, whose value is
+     * that minigame's `minigame_teleport` row.
+     */
+    private fun listGameId(tile: Int): Int {
+        val rows = ServerCacheManager.getEnum(LIST_ROWS.asRSCM(RSCMType.ENUM))?.values ?: return -1
+        val row = (rows[tile - 1] as? Number)?.toInt() ?: return -1
+        return MinigameTeleportRow.getRow(row).id
     }
 
     private fun ProtectedAccess.openTab(tab: Int, panel: String) {
@@ -72,6 +100,7 @@ constructor(
             mes(denial, ChatType.Engine)
             return
         }
+        ifClose()
         actionDelay = mapClock + CAST_TICKS + 1
         anim(CAST_ANIM)
         spotanim(CAST_SPOTANIM, height = CAST_SPOTANIM_HEIGHT)
@@ -88,6 +117,14 @@ constructor(
         private const val GROUPING = "interface.grouping"
         private const val TELEPORT_BUTTON = "component.grouping:teleport"
         private const val MAX_GAME_ID = 40
+        private const val LIST = "interface.minigames"
+        private const val LIST_ROWS = "enum.minigames_list_rows"
+        private const val LIST_TILES = 21
+
+        private val SPELLS =
+            listOf("standard", "ancient", "lunar", "arceuus").map {
+                "component.magic_spellbook:teleport_minigame_$it"
+            }
 
         /** Chat-channel, Your Clan, View another clan, Grouping: `enum_3839` order. */
         private val TAB_PANELS =

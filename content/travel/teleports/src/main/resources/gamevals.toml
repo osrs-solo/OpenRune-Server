@@ -301,3 +301,6 @@ teleport_route_87 = 56487
 teleport_route_88 = 56488
 teleport_route_89 = 56489
 teleport_route_90 = 56490
+
+[gamevals.enum]
+minigames_list_rows = 5923
