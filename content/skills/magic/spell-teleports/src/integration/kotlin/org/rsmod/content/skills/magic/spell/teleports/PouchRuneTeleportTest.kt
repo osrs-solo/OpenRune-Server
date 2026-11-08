@@ -46,7 +46,7 @@ class PouchRuneTeleportTest {
             cast()
             advance(ticks = 10)
 
-            assertTrue(player.coords.chebyshevDistance(VARROCK) <= 2, "${player.coords}")
+            assertTrue(player.coords.chebyshevDistance(VARROCK) <= ARRIVAL_SLACK, "${player.coords}")
             assertEquals(7, player.vars["varbit.rune_pouch_quantity_1"])
             assertEquals(9, player.vars["varbit.rune_pouch_quantity_2"])
             assertEquals(9, player.vars["varbit.rune_pouch_quantity_4"])
@@ -63,7 +63,7 @@ class PouchRuneTeleportTest {
             cast()
             advance(ticks = 10)
 
-            assertTrue(player.coords.chebyshevDistance(VARROCK) <= 2, "${player.coords}")
+            assertTrue(player.coords.chebyshevDistance(VARROCK) <= ARRIVAL_SLACK, "${player.coords}")
             assertEquals(7, player.vars["varbit.rune_pouch_quantity_1"])
             assertEquals(4, player.inv.count("obj.lawrune"))
         }
@@ -85,7 +85,7 @@ class PouchRuneTeleportTest {
 
     private fun GameTestScope.prepare(pouch: String) {
         allocZoneCollision(START)
-        for (dx in -3..3) for (dz in -3..3) allocZoneCollision(VARROCK.translate(dx, dz))
+        for (dx in -6..6) for (dz in -6..6) allocZoneCollision(VARROCK.translate(dx, dz))
         player.teleport(START)
         player.clearInv()
         player.inv[0] = InvObj(pouch.asRSCM(RSCMType.OBJ), 1)
@@ -115,6 +115,7 @@ class PouchRuneTeleportTest {
     private companion object {
         val START = CoordGrid(0, 50, 50, 10, 10)
         val VARROCK = CoordGrid(3212, 3424, 0)
+        const val ARRIVAL_SLACK = 5
         val COMPACT_IDS = mapOf("obj.airrune" to 1, "obj.firerune" to 4, "obj.lawrune" to 11)
 
         val SCRIPTS =

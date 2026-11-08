@@ -38,14 +38,16 @@ object TravelCoverage {
             "enter", "exit", "leave", "go-down", "go-up", "go-through", "walk-down", "walk-up",
             "squeeze-through", "crawl-through", "crawl-down", "jump-down", "jump-in", "jump-over",
             "descend", "ascend", "board", "pass", "pass-through", "travel", "quick-travel",
-            "use-ladder", "climb-down-ladder", "climb-up-ladder", "dive-in", "swim",
+            "use-ladder", "climb-down-ladder", "climb-up-ladder", "dive-in", "swim", "cross",
         )
 
     private val TRAVEL_NAME_HINTS =
         listOf(
             "trapdoor", "hatch", "manhole", "ladder", "stair", "cave", "tunnel", "entrance", "door",
-            "gate",
+            "gate", "portal",
         )
+
+    private val WAY_VERBS = setOf("open", "use", "teleport", "step-through", "walk-through")
 
     fun travelVerb(type: ObjectServerType, op: Int): String? {
         val text = type.actions.getOpOrNull(op - 1)?.trim().orEmpty()
@@ -53,8 +55,7 @@ object TravelCoverage {
         val verb = text.lowercase()
         if (verb in TRAVEL_VERBS) return text
         val name = type.name.lowercase()
-        val opensAWay = verb == "open" || verb == "use"
-        return if (opensAWay && TRAVEL_NAME_HINTS.any { it in name }) text else null
+        return if (verb in WAY_VERBS && TRAVEL_NAME_HINTS.any { it in name }) text else null
     }
 
     fun scan(

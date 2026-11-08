@@ -9,9 +9,13 @@ import jakarta.inject.Inject
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import org.rsmod.api.game.process.PluginScriptBootGate
+import org.rsmod.content.generic.locs.autotravel.TravelLoc
+import org.rsmod.content.generic.locs.autotravel.TravelType
+import org.rsmod.map.CoordGrid
 import org.rsmod.api.player.events.interact.LocCategoryEvents
 import org.rsmod.api.player.events.interact.LocContentEvents
 import org.rsmod.api.player.events.interact.LocEvents
+import org.rsmod.api.player.events.interact.LocUnimplementedEvents
 import org.rsmod.api.player.output.mes
 import org.rsmod.api.script.onCommand
 import org.rsmod.events.EventBus
@@ -56,7 +60,35 @@ constructor(
         val doorTypes = doorTypes()
         val closedDoors = result.unhandled.filter { it.op == 1 }.map { internalName(it.locId) }
         DoorTagWriter.write(DoorPairing.pair(closedDoors, doorTypes), REPORT_DIR)
+        writeAutoTravelTags(unhandledIds)
         return TravelCoverageReport.write(result, REPORT_DIR, ::internalName)
+    }
+
+    private fun writeAutoTravelTags(unhandledIds: Set<Int>) {
+        val byTile = HashMap<CoordGrid, MutableList<TravelLoc>>()
+        val byId = HashMap<Int, MutableList<TravelLoc>>()
+        locs.mapLocs.forEachLoc { zone, key, entity ->
+            val loc = TravelLoc(entity.id, zone.toCoords().translate(key.x, key.z), entity.angle)
+            byTile.getOrPut(loc.coords) { mutableListOf() } += loc
+            byId.getOrPut(loc.id) { mutableListOf() } += loc
+        }
+        val result =
+            AutoTravelPairing.pair(
+                placed = byId,
+                unhandledIds = unhandledIds,
+                type = ::travelType,
+                contentGroup = { objectType(it)?.contentGroup ?: -1 },
+                symbol = ::internalName,
+                idOf = { runCatching { RSCM.getRSCM(it) }.getOrNull() },
+                locsAt = { byTile[it].orEmpty() },
+            )
+        AutoTravelTagWriter.write(result, REPORT_DIR)
+    }
+
+    private fun travelType(id: Int): TravelType? {
+        val type = objectType(id) ?: return null
+        val ops = (0 until 5).map { type.actions.getOpOrNull(it).orEmpty() }
+        return TravelType(type.name, ops, type.width, type.length)
     }
 
     private fun doorTypes(): Map<String, DoorType> =
@@ -93,6 +125,9 @@ constructor(
         if (answers(TYPE_EVENTS[index], type.id) || answers(TYPE_APPROACH[index], type.id)) {
             return true
         }
+        if (answers(FALLBACK_EVENTS[index], type.id)) {
+            return true
+        }
         val content = type.contentGroup
         if (content != -1) {
             if (answers(CONTENT_EVENTS[index], content)) return true
@@ -120,6 +155,14 @@ constructor(
                 LocEvents.Op3::class.java,
                 LocEvents.Op4::class.java,
                 LocEvents.Op5::class.java,
+            )
+        val FALLBACK_EVENTS =
+            listOf(
+                LocUnimplementedEvents.Op1::class.java,
+                LocUnimplementedEvents.Op2::class.java,
+                LocUnimplementedEvents.Op3::class.java,
+                LocUnimplementedEvents.Op4::class.java,
+                LocUnimplementedEvents.Op5::class.java,
             )
         val TYPE_APPROACH =
             listOf(

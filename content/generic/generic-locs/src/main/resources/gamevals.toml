@@ -12,6 +12,7 @@ lockpick_door_ardougne_castle=62605
 lockpick_door_magic_axe_hut=62606
 lockpick_door_pirates_hideout=62607
 lockpick_door_yanille_dungeon=62608
+lockpick_door_ham_trapdoor=62609
 pickable_potato=65361
 pickable_flax=65360
 pickable_banana=65359
@@ -33,6 +34,12 @@ water_source = 62516
 water_source_well = 62400
 water_source_tap = 62401
 water_source_pump = 62402
+auto_travel_up = 65400
+auto_travel_down = 65401
+auto_travel_option = 65402
+auto_travel_cross = 65403
+auto_trapdoor_closed = 65404
+auto_trapdoor_open = 65405
 
 [gamevals.enum]
 water_container_fills = 64402

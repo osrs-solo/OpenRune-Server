@@ -10,6 +10,7 @@ import org.rsmod.api.script.onOpLoc4
 import org.rsmod.api.script.onOpLoc5
 import org.rsmod.api.table.LockpickDoorsRow
 import org.rsmod.game.loc.BoundLocInfo
+import org.rsmod.map.CoordGrid
 import org.rsmod.plugin.scripts.PluginScript
 import org.rsmod.plugin.scripts.ScriptContext
 
@@ -60,6 +61,10 @@ class LockpickDoorScript : PluginScript() {
         }
         mes("You manage to pick the lock.")
         statAdvance(THIEVING, door.xpTenths / 10.0)
+        if (door.exit != WALK_THROUGH) {
+            telejump(door.exit)
+            return
+        }
         teleport(WallCrossing.across(coords, loc.coords, loc.angleId))
     }
 
@@ -70,5 +75,6 @@ class LockpickDoorScript : PluginScript() {
         const val PICK_TICKS = 3
         const val SUCCESS_LOW = 80
         const val SUCCESS_HIGH = 256
+        val WALK_THROUGH = CoordGrid(0, 0, 0)
     }
 }
