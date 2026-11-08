@@ -186,7 +186,8 @@ Promise and the Hunter landing-site builds are not required), and flights are a 
 the flying cutscene.
 
 Magic carpets use the `carpet_shantay` and `carpet_pollnivneach` rows (hub first). Rides are free,
-a fade rather than the carpet ride, and need no quests (Uzer, Sophanem and Menaphos included).
+fly a straight line at 3 tiles a tick with no banking turns or sound, and need no quests (Uzer,
+Sophanem and Menaphos included).
 
 Minecarts use the `lovakengj_minecart` rows (any station to any other, free without The Forsaken
 Tower) and the `keldagrim_cart` rows (Keldagrim first; the Grand Exchange trapdoor and the Ice
