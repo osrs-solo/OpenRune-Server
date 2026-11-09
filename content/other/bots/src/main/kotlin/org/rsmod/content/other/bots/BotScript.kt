@@ -11,10 +11,15 @@ import org.rsmod.plugin.scripts.ScriptContext
 
 class BotScript
 @Inject
-constructor(private val bots: BotWorld, private val hotspots: BotHotspots) : PluginScript() {
+constructor(
+    private val bots: BotWorld,
+    private val hotspots: BotHotspots,
+    private val names: BotNames,
+) : PluginScript() {
     private val perf = BotPerf()
 
     override fun ScriptContext.startup() {
+        names.startFetching()
         onEvent<GameLifecycle.StartCycle> { perf.startCycle() }
         onEvent<GameLifecycle.LateCycle> {
             perf.timeBots {
