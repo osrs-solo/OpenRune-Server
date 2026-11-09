@@ -83,6 +83,22 @@ class PouchRuneTeleportTest {
             assertEquals(10, player.vars["varbit.rune_pouch_quantity_2"])
         }
 
+    @Test
+    fun GameTestState.`a regular pouch cannot spend runes left in the divine-only fourth slot`() =
+        runInjectedGameTest(SpellTeleportScript::class, Module(), *SCRIPTS) {
+            prepare("obj.bh_rune_pouch")
+            pouch(1, "obj.airrune", 10)
+            pouch(2, "obj.firerune", 10)
+            pouch(4, "obj.lawrune", 10)
+
+            cast()
+            advance(ticks = 10)
+
+            assertEquals(START, player.coords)
+            assertEquals(10, player.vars["varbit.rune_pouch_quantity_4"])
+            assertEquals(10, player.vars["varbit.rune_pouch_quantity_1"])
+        }
+
     private fun GameTestScope.prepare(pouch: String) {
         allocZoneCollision(START)
         for (dx in -6..6) for (dz in -6..6) allocZoneCollision(VARROCK.translate(dx, dz))

@@ -17,4 +17,5 @@ dependencies {
     integrationImplementation(projects.api.utils.utilsTime)
     integrationImplementation(projects.api.combat.combatCommons)
     integrationImplementation(projects.api.spellsRunes)
+    integrationImplementation(projects.content.skills.magic.runePouch)
 }

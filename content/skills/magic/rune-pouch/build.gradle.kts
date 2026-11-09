@@ -4,5 +4,6 @@ plugins {
 }
 
 dependencies {
+    implementation(projects.api.invStorage)
     implementation(projects.api.pluginCommons)
 }

@@ -38,7 +38,6 @@ public object MagicRunes {
     public fun validateRequirements(
         inv: Inventory,
         worn: Inventory,
-        pouch: RunePouch?,
         requirements: RequirementList,
         useFakeRunes: Boolean,
         runeFountain: Boolean,
@@ -83,7 +82,6 @@ public object MagicRunes {
                     inv = inv,
                     righthand = righthand,
                     lefthand = lefthand,
-                    pouch = pouch,
                     rune = combo,
                     required = minRemaining,
                     useFakeRunes = useFakeRunes,
@@ -119,7 +117,6 @@ public object MagicRunes {
                     inv = inv,
                     righthand = righthand,
                     lefthand = lefthand,
-                    pouch = pouch,
                     rune = req.type,
                     required = req.remaining,
                     useFakeRunes = useFakeRunes,
@@ -164,7 +161,6 @@ public object MagicRunes {
                     inv = inv,
                     righthand = righthand,
                     lefthand = lefthand,
-                    pouch = pouch,
                     rune = combo,
                     required = maxRemaining,
                     useFakeRunes = useFakeRunes,
@@ -217,7 +213,6 @@ public object MagicRunes {
         inv: Inventory,
         righthand: InvObj?,
         lefthand: InvObj?,
-        pouch: RunePouch?,
         rune: ItemServerType,
         required: Int,
         useFakeRunes: Boolean,
@@ -266,10 +261,10 @@ public object MagicRunes {
 
         val invRuneSlot = inv.indexOfFirst { it.isType(rune) }
         val invRuneObj = inv[invRuneSlot]
+        val internalName = RSCM.getReverseMapping(RSCMType.OBJ, rune.id)
 
         // Fast-path: return single-list `HasEnough` validation when inv has enough runes.
         if (invRuneObj != null && invRuneObj.count >= required) {
-            val internalName = RSCM.getReverseMapping(RSCMType.OBJ, rune.id)
             val sources = listOf(Source.InvSource(internalName, invRuneSlot, required))
             return Validation.Valid.HasEnough(sources)
         }
@@ -280,49 +275,13 @@ public object MagicRunes {
         // Reduce remaining count from existing inv rune (if available).
         if (invRuneObj != null) {
             remaining -= invRuneObj.count
-            val internalName = RSCM.getReverseMapping(RSCMType.OBJ, rune.id)
             sources += Source.InvSource(internalName, invRuneSlot, invRuneObj.count)
         }
 
-        if (pouch != null) {
-            val pouchCompactRune1 = pouch.compactId1
-            val pouchCompactRune2 = pouch.compactId2
-            val pouchCompactRune3 = pouch.compactId3
-            val pouchCompactRune4 = pouch.compactId4
-
-            val pouchRuneCount: Int
-            val pouchCountVarBit: String?
-            when {
-                pouchCompactRune1 == compactId -> {
-                    pouchRuneCount = pouch.count1
-                    pouchCountVarBit = pouch.countVarBit1
-                }
-
-                pouchCompactRune2 == compactId -> {
-                    pouchRuneCount = pouch.count2
-                    pouchCountVarBit = pouch.countVarBit2
-                }
-
-                pouchCompactRune3 == compactId -> {
-                    pouchRuneCount = pouch.count3
-                    pouchCountVarBit = pouch.countVarBit3
-                }
-
-                pouchCompactRune4 == compactId -> {
-                    pouchRuneCount = pouch.count4
-                    pouchCountVarBit = pouch.countVarBit4
-                }
-
-                else -> {
-                    pouchRuneCount = 0
-                    pouchCountVarBit = null
-                }
-            }
-
-            if (pouchCountVarBit != null && pouchRuneCount >= remaining) {
-                sources += Source.VarBitSource(pouchCountVarBit, remaining)
-                return Validation.Valid.HasEnough(sources)
-            }
+        val stored = inv.count(internalName) - inv.physicalCount(internalName)
+        if (stored >= remaining) {
+            sources += Source.StorageSource(internalName, remaining)
+            return Validation.Valid.HasEnough(sources)
         }
 
         val substitutes = subs[rune]
@@ -333,7 +292,6 @@ public object MagicRunes {
                         inv = inv,
                         righthand = righthand,
                         lefthand = lefthand,
-                        pouch = pouch,
                         rune = sub,
                         required = remaining,
                         useFakeRunes = useFakeRunes,
@@ -399,10 +357,18 @@ public object MagicRunes {
     }
 
     public sealed class Source {
-        public data class InvSource(val obj: String, val slot: Int, val count: Int) :
-            Source()
+        public abstract val obj: String
+        public abstract val count: Int
 
-        public data class VarBitSource(val varbit: String, val count: Int) : Source()
+        public data class InvSource(
+            override val obj: String,
+            val slot: Int,
+            override val count: Int,
+        ) : Source()
+
+        /** Held in a virtual storage such as a rune pouch, reached through the inventory. */
+        public data class StorageSource(override val obj: String, override val count: Int) :
+            Source()
     }
 
     public class RequirementList internal constructor(internal val reqs: List<Requirement>) {
@@ -434,19 +400,4 @@ public object MagicRunes {
             }
         }
     }
-
-    public data class RunePouch(
-        val compactId1: Int,
-        val compactId2: Int,
-        val compactId3: Int,
-        val compactId4: Int,
-        val countVarBit1: String,
-        val countVarBit2: String,
-        val countVarBit3: String,
-        val countVarBit4: String?,
-        val count1: Int,
-        val count2: Int,
-        val count3: Int,
-        val count4: Int,
-    )
 }

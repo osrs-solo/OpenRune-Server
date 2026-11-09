@@ -60,6 +60,23 @@ object RunePouch {
     fun storedAmount(player: Player, rune: String): Int =
         (0 until 4).sumOf { i -> slot(player, i)?.takeIf { it.first == rune }?.second ?: 0 }
 
+    /** How much of [rune] the pouch the player holds can supply; a regular pouch has 3 slots. */
+    fun usableAmount(player: Player, rune: String): Int =
+        (0 until slotCount(player)).sumOf { i ->
+            slot(player, i)?.takeIf { it.first == rune }?.second ?: 0
+        }
+
+    /** Takes up to [amount] of [rune] from the held pouch's slots; returns how many were taken. */
+    fun take(player: Player, rune: String, amount: Int): Int {
+        var taken = 0
+        for (i in 0 until slotCount(player)) {
+            if (taken >= amount) break
+            if (slot(player, i)?.first != rune) continue
+            taken += remove(player, i, amount - taken)
+        }
+        return taken
+    }
+
     /** The slot that holds [rune], else the first free one, else null (no free type slot). */
     fun slotFor(player: Player, rune: String, slots: Int = slotCount(player)): Int? {
         val held = (0 until slots).firstOrNull { slot(player, it)?.first == rune }

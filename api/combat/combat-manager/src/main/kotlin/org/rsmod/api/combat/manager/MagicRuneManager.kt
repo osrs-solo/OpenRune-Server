@@ -8,10 +8,9 @@ import org.rsmod.api.combat.commons.magic.MagicSpell
 import org.rsmod.api.combat.commons.magic.SpellQuestRequirement
 import org.rsmod.api.combat.commons.magic.Spellbook
 import org.rsmod.api.config.refs.BaseParams
-import org.rsmod.api.invtx.invDelAll
+import org.rsmod.api.invtx.invDel
 import org.rsmod.api.player.output.mes
 import org.rsmod.api.player.stat.magicLvl
-import org.rsmod.api.player.vars.VarPlayerIntMapSetter
 import org.rsmod.api.player.vars.enumVarBit
 import org.rsmod.api.spells.runes.MagicRunes
 import org.rsmod.api.spells.runes.combo.ComboRuneRepository
@@ -22,8 +21,6 @@ import org.rsmod.api.spells.runes.subs.RuneSubstituteRepository
 import org.rsmod.api.spells.runes.unlimited.UnlimitedRuneRepository
 import org.rsmod.api.table.QuestRow
 import org.rsmod.game.entity.Player
-import org.rsmod.game.inv.InvObj
-import org.rsmod.game.inv.isAnyType
 import org.rsmod.game.inv.isType
 
 public class MagicRuneManager
@@ -144,42 +141,22 @@ constructor(
 
         val sources = sourced.flatMap { it.sources }
 
-        // Ensure player has enough varbits to be removed.
-        val varbitSources = sources.filterIsInstance<MagicRunes.Source.VarBitSource>()
-        val enoughVarBits = varbitSources.all { player.vars[it.varbit] >= it.count }
-        if (!enoughVarBits) {
-            return CastResult.Failure.NotEnoughVarBit
+        val required = LinkedHashMap<String, Int>()
+        for (source in sources) {
+            required.merge(source.obj, source.count, Int::plus)
         }
-
-        val invSources = sources.filterIsInstance<MagicRunes.Source.InvSource>()
-
-        val consume = ArrayList<InvObj>(invSources.size)
-        for (source in invSources) {
-            val (type, slot, required) = source
-            val invObj = player.inv[slot]
-            if (!invObj.isType(type)) {
-                continue
-            }
-            consume += invObj.copy(count = required)
-        }
-
-        // An empty transaction reports failure, and a cast paid entirely from a rune pouch or
-        // another varbit source has nothing to take from the inventory.
-        if (consume.isNotEmpty() && !player.invDelAll(player.inv, consume, strict = true).success) {
+        if (required.any { (obj, count) -> player.inv.count(obj) < count }) {
             return CastResult.Failure.NotEnoughInvObj
         }
 
-        for (source in varbitSources) {
-            val result = player.vars[source.varbit] - source.count
-            check(result >= 0) {
-                "Expected result to be positive: " +
-                    "$result (source=$source, validations=$validations)"
-            }
-            VarPlayerIntMapSetter.set(player, source.varbit, result)
+        // Runes stored in a rune pouch (or any other storage hook) are taken by the same delete,
+        // after the inventory's own stack, so validation and removal always agree on the source.
+        for ((obj, count) in required) {
+            val removed = player.invDel(player.inv, obj, count, strict = true)
+            check(removed.success) { "Failed to remove $count x $obj after validation: $validations" }
         }
 
-        val usedSunfire = consume.any { it.isType("obj.sunfirerune") }
-        return CastResult.Success.Consumed(usedSunfire)
+        return CastResult.Success.Consumed(usedSunfire = "obj.sunfirerune" in required)
     }
 
     public fun validateSpell(player: Player, spell: MagicSpell): List<MagicRunes.Validation> {
@@ -209,7 +186,6 @@ constructor(
         MagicRunes.validateRequirements(
             inv = player.inv,
             worn = player.worn,
-            pouch = player.currentRunePouch(),
             requirements = MagicRunes.RequirementList.from(reqs),
             useFakeRunes = player.useFakeRunes(),
             runeFountain = player.nearFountainOfRune(),
@@ -258,52 +234,6 @@ constructor(
     private fun Player.nearFountainOfRune(): Boolean {
         return vars["varbit.fountain_of_rune_active"] == 1
     }
-
-    private fun Player.currentRunePouch(): MagicRunes.RunePouch? {
-        val hasRunePouch = inv.any { it.isRegularRunePouch() || it.isDivineRunePouch() }
-        if (!hasRunePouch) {
-            return null
-        }
-        val hasDivineRunePouch = inv.any { it.isDivineRunePouch() }
-
-        val pouchCompactRune1 = vars["varbit.rune_pouch_type_1"]
-        val pouchCompactRune2 = vars["varbit.rune_pouch_type_2"]
-        val pouchCompactRune3 = vars["varbit.rune_pouch_type_3"]
-        val pouchCountVarBit1 = "varbit.rune_pouch_quantity_1"
-        val pouchCountVarBit2 = "varbit.rune_pouch_quantity_2"
-        val pouchCountVarBit3 = "varbit.rune_pouch_quantity_3"
-
-        val pouchCompactRune4: Int
-        val pouchCountVarBit4: String?
-        if (hasDivineRunePouch) {
-            pouchCompactRune4 = vars["varbit.rune_pouch_type_4"]
-            pouchCountVarBit4 = "varbit.rune_pouch_quantity_4"
-        } else {
-            pouchCompactRune4 = 0
-            pouchCountVarBit4 = null
-        }
-
-        return MagicRunes.RunePouch(
-            compactId1 = pouchCompactRune1,
-            compactId2 = pouchCompactRune2,
-            compactId3 = pouchCompactRune3,
-            compactId4 = pouchCompactRune4,
-            countVarBit1 = pouchCountVarBit1,
-            countVarBit2 = pouchCountVarBit2,
-            countVarBit3 = pouchCountVarBit3,
-            countVarBit4 = pouchCountVarBit4,
-            count1 = vars[pouchCountVarBit1],
-            count2 = vars[pouchCountVarBit2],
-            count3 = vars[pouchCountVarBit3],
-            count4 = pouchCountVarBit4?.let(vars::get) ?: 0,
-        )
-    }
-
-    private fun InvObj?.isRegularRunePouch(): Boolean =
-        isAnyType("obj.bh_rune_pouch", "obj.bh_rune_pouch_trouver")
-
-    private fun InvObj?.isDivineRunePouch(): Boolean =
-        isAnyType("obj.divine_rune_pouch", "obj.divine_rune_pouch_trouver")
 
     private fun MagicRunes.Validation.requirementMessage(): String =
         when (this) {
@@ -360,12 +290,10 @@ constructor(
         }
 
         public sealed class Failure : CastResult() {
-            public object NotEnoughVarBit : Failure()
-
             public object NotEnoughInvObj : Failure()
 
             /**
-             * Unlike [NotEnoughVarBit] and [NotEnoughInvObj], this failure occurs before any
+             * Unlike [NotEnoughInvObj], this failure occurs before any
              * consumption is attempted. It indicates a lower-level validation failure from
              * [MagicRunes].
              */
