@@ -42,6 +42,7 @@ constructor(
     private val mapClock: MapClock,
     private val random: GameRandom,
     private val collision: CollisionFlagMap,
+    private val names: BotNames,
 ) {
     private val bots = ArrayList<Bot>()
     private val facing = PlayerFaceSquareProcessor()
@@ -145,7 +146,7 @@ constructor(
         style: String,
     ): Player {
         val player = Player()
-        val name = BotLooks.name(random, bots.mapTo(HashSet()) { it.player.username })
+        val name = names.next(bots.mapTo(HashSet()) { it.player.username })
         player.slotId = slot
         player.username = name.lowercase()
         player.displayName = name
