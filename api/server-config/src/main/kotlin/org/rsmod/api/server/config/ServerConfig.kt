@@ -72,7 +72,7 @@ public data class GrandExchangeYaml(
     @JsonProperty("refresh-minutes")
     val refreshMinutes: Int = 10,
     @JsonProperty("user-agent")
-    val userAgent: String = "OpenRune-Server Grand Exchange (github.com/osrs-solo/OpenRune-Server)",
+    val userAgent: String = "OpenRune-Server GE price fetcher",
     @JsonProperty("wiggle-room-percent")
     val wiggleRoomPercent: Double = 5.0,
     @JsonProperty("fill-mode")
