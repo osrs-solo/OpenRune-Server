@@ -43,20 +43,20 @@ class RunePouchScriptTest {
                     assertEquals(20, store("obj.firerune", Int.MAX_VALUE))
                 }
             }
-            assertEquals(70, player.inv.count("obj.airrune"))
-            assertEquals(0, player.inv.count("obj.firerune"))
+            assertEquals(70, player.inv.physicalCount("obj.airrune"))
+            assertEquals(0, player.inv.physicalCount("obj.firerune"))
             assertEquals("obj.airrune" to 30, RunePouch.slot(player, 0))
             assertEquals("obj.firerune" to 20, RunePouch.slot(player, 1))
             assertEquals(1, player.vars["varbit.rune_pouch_type_1"])
             assertEquals(30, player.vars["varbit.rune_pouch_quantity_1"])
 
             with(script) { player.withProtectedAccess { assertEquals(5, withdraw(0, 5)) } }
-            assertEquals(75, player.inv.count("obj.airrune"))
+            assertEquals(75, player.inv.physicalCount("obj.airrune"))
             assertEquals(25, RunePouch.storedAmount(player, "obj.airrune"))
 
             with(script) { player.withProtectedAccess { emptyPouch() } }
-            assertEquals(100, player.inv.count("obj.airrune"))
-            assertEquals(20, player.inv.count("obj.firerune"))
+            assertEquals(100, player.inv.physicalCount("obj.airrune"))
+            assertEquals(20, player.inv.physicalCount("obj.firerune"))
             assertNull(RunePouch.slot(player, 0))
             assertNull(RunePouch.slot(player, 1))
             assertEquals(0, player.vars["varbit.rune_pouch_type_1"])
@@ -80,8 +80,8 @@ class RunePouchScriptTest {
                     assertEquals(0, store("obj.firerune", 10))
                 }
             }
-            assertEquals(4_000, player.inv.count("obj.airrune"))
-            assertEquals(20_000, player.inv.count("obj.firerune"))
+            assertEquals(4_000, player.inv.physicalCount("obj.airrune"))
+            assertEquals(20_000, player.inv.physicalCount("obj.firerune"))
             assertEquals(16_000, RunePouch.storedAmount(player, "obj.airrune"))
         }
 
@@ -97,6 +97,6 @@ class RunePouchScriptTest {
             }
             with(script) { player.withProtectedAccess { assertEquals(0, withdraw(0, 50)) } }
             assertEquals(50, RunePouch.storedAmount(player, "obj.lawrune"))
-            assertEquals(0, player.inv.count("obj.lawrune"))
+            assertEquals(0, player.inv.physicalCount("obj.lawrune"))
         }
 }

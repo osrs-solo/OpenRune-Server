@@ -65,7 +65,7 @@ class PouchRuneTeleportTest {
 
             assertTrue(player.coords.chebyshevDistance(VARROCK) <= ARRIVAL_SLACK, "${player.coords}")
             assertEquals(7, player.vars["varbit.rune_pouch_quantity_1"])
-            assertEquals(4, player.inv.count("obj.lawrune"))
+            assertEquals(4, player.inv.physicalCount("obj.lawrune"))
         }
 
     @Test
