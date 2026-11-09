@@ -61,3 +61,6 @@ logs/
 /bench
 
 /jagexcache/
+
+# Local 2009scape reference release (AGPL, not part of this repo)
+windows-master/
