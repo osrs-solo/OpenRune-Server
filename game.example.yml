@@ -46,8 +46,8 @@ gameplay:
     # background. false, or the wiki being unreachable, uses the shipped price snapshot.
     live-prices: true
     refresh-minutes: 10
-    # The wiki asks every client to identify itself; name your server and a contact here.
-    user-agent: "OpenRune-Server Grand Exchange (github.com/osrs-solo/OpenRune-Server)"
+    # The wiki asks every client to identify itself. Add your own contact here if you like.
+    user-agent: "OpenRune-Server GE price fetcher"
     # Offers within this percent of the average price fill against the simulated market.
     # A buy further below it, or a sell further above it, waits for a player to match.
     wiggle-room-percent: 5.0

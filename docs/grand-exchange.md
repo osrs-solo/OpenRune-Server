@@ -52,7 +52,7 @@ gameplay:
     enabled: true
     live-prices: true
     refresh-minutes: 10
-    user-agent: "OpenRune-Server Grand Exchange (github.com/osrs-solo/OpenRune-Server)"
+    user-agent: "OpenRune-Server GE price fetcher"
     wiggle-room-percent: 5.0
     fill-mode: "instant"
     gradual-fill-percent: 10.0

@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const API = "https://prices.runescape.wiki/api/v1/osrs";
-const USER_AGENT = "OpenRune-Server Grand Exchange snapshot (github.com/osrs-solo/OpenRune-Server)";
+const USER_AGENT = "OpenRune-Server GE price snapshot";
 const GAMEVALS = ".data/gamevals-binary/gamevals.dat";
 const OUTPUT =
     "content/other/grand-exchange/pack/src/main/resources/pack/configs/ge_guide_prices.toml";
