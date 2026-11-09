@@ -150,7 +150,7 @@ TzHaar Fight Cave · TzHaar Fight Pit · TzHaar-Ket-Rak's Challenges · Vale Tot
 
 The tracker doesn't cover these. A keyword search of `content/` and `api/` found no system for them:
 
-- [ ] **Grand Exchange**: `api/market` only holds item prices. No offer or trading interface.
+- [x] **Grand Exchange**: `content/other/grand-exchange`; see `docs/grand-exchange.md`. Item sets, buy limits and the tax are not done.
 - [ ] **Clue scrolls / Treasure Trails**: clue drops exist (`content/drops`), but there's no way to solve the steps.
 - [ ] **Achievement Diaries**: nothing found.
 - [ ] **Fairy rings**: nothing found.
