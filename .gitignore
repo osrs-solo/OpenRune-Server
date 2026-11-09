@@ -64,3 +64,6 @@ logs/
 
 # Local 2009scape reference release (AGPL, not part of this repo)
 windows-master/
+
+# Fork-only notes; not part of upstream
+/docs/missing-content.md
