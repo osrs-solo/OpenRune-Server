@@ -941,3 +941,9 @@ isServerOnly = true
 id = "varp.agility_mark_clock"
 scope = "Perm"
 transmit = "Never"
+
+[[varp]]
+isServerOnly = true
+id = "varp.mcannon_ornament"
+scope = "Perm"
+transmit = "Never"

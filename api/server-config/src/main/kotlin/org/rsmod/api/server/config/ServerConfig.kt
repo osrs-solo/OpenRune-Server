@@ -62,6 +62,8 @@ public data class GameplayConfig(
     val gravestones: GravestonesYaml = GravestonesYaml(),
     @JsonProperty("grand-exchange")
     val grandExchange: GrandExchangeYaml = GrandExchangeYaml(),
+    @JsonProperty("bots-enabled")
+    val botsEnabled: Boolean = true,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

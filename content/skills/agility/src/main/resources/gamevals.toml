@@ -5,9 +5,9 @@ agility_mark_clock = 65466
 
 [gamevals.dbtable]
 agility_course = 65483
-agility_obstacle = 65484
+agility_obstacle = 65494
 agility_stage = 65487
-agility_shortcut = 65485
+agility_shortcut = 65496
 agility_shortcut_link = 65486
 
 [gamevals.dbrow]
