@@ -9,13 +9,17 @@ import org.rsmod.api.area.checker.AreaChecker
 import org.rsmod.api.player.hook.PlayerTeleportValidator
 import org.rsmod.api.player.hook.TeleportType
 import org.rsmod.api.player.output.ChatType
+import org.rsmod.api.player.output.ClientScripts.mesLayerClose
 import org.rsmod.api.player.protect.ProtectedAccess
+import org.rsmod.api.player.vars.VarPlayerIntMapDelegate
 import org.rsmod.api.player.vars.intVarBit
 import org.rsmod.api.script.onIfModalButton
 import org.rsmod.api.script.onOpLoc1
 import org.rsmod.api.script.onOpLoc2
 import org.rsmod.api.script.onOpLoc3
 import org.rsmod.api.script.onOpLoc4
+import org.rsmod.api.script.onPlayerLogin
+import org.rsmod.game.entity.Player
 import org.rsmod.plugin.scripts.PluginScript
 import org.rsmod.plugin.scripts.ScriptContext
 
@@ -48,9 +52,18 @@ constructor(
     private val staffs: Set<Int> = STAFFS.map { it.asRSCM(RSCMType.OBJ) }.toSet()
 
     private var ProtectedAccess.lastDestination by intVarBit("varbit.fairyring_lastloc")
+    private var Player.lastDestinationOp by intVarBit("varbit.fairyring_lastloc_opvis")
+    private var Player.favouritesOp by intVarBit("varbit.fairyrings_favourite_opvis")
 
     override fun ScriptContext.startup() {
         rings = FairyRings.load()
+
+        onPlayerLogin {
+            if (player.lastDestinationOp in 1 until LAST_DESTINATION_SHOWN) {
+                player.lastDestinationOp += LAST_DESTINATION_SHOWN
+            }
+            player.syncFavouritesOp()
+        }
 
         for (loc in RING_LOCS) {
             onOpLoc1(loc) { zanaris() }
@@ -93,7 +106,7 @@ constructor(
 
     private suspend fun ProtectedAccess.zanaris() {
         val ring = rings.byCode(ZANARIS_CODE) ?: return
-        travel(ring)
+        travel(ring, remember = false)
     }
 
     private fun ProtectedAccess.configure() {
@@ -206,6 +219,7 @@ constructor(
             vars["varbit.fairyring_fave_${slot}_${dial + 1}"] = value
         }
         vars["varbit.fairyring_fave_set_$slot"] = 1
+        player.syncFavouritesOp()
         reopenLog()
     }
 
@@ -214,7 +228,17 @@ constructor(
             return
         }
         vars["varbit.fairyring_fave_set_$slot"] = 0
+        player.syncFavouritesOp()
         reopenLog()
+    }
+
+    /** The ring's `Favourites` op shows only while this holds a bit for some filled slot. */
+    private fun Player.syncFavouritesOp() {
+        val vars = VarPlayerIntMapDelegate(client, this.vars, processedMapClock > 0, this)
+        favouritesOp =
+            (1..FAVOURITE_SLOTS)
+                .filter { vars["varbit.fairyring_fave_set_$it"] != 0 }
+                .sumOf { 1 shl (it - 1) }
     }
 
     /* Teleport */
@@ -224,7 +248,7 @@ constructor(
         return weapon.id in staffs
     }
 
-    private suspend fun ProtectedAccess.travel(ring: FairyRing) {
+    private suspend fun ProtectedAccess.travel(ring: FairyRing, remember: Boolean = true) {
         if (!hasFairyMagic()) {
             mes(NO_FAIRY_MAGIC)
             return
@@ -238,6 +262,7 @@ constructor(
             return
         }
         ifClose()
+        mesLayerClose(player, SEARCH_MESLAYER_MODE)
         actionDelay = mapClock + ACTION_DELAY
         anim(VANISH_ANIM)
         spotanim(FLOWER_RING)
@@ -254,7 +279,9 @@ constructor(
         telejump(destination, TeleportType.Exempt)
         anim(APPEAR_ANIM)
         markVisited(ring)
-        lastDestination = ring.logIndex
+        if (remember) {
+            player.lastDestinationOp = LAST_DESTINATION_SHOWN + ring.logIndex
+        }
     }
 
     private companion object {
@@ -271,6 +298,15 @@ constructor(
             listOf("varbit.fairyring_1", "varbit.fairyring_2", "varbit.fairyring_3")
 
         private const val FAVOURITE_SLOTS = 10
+
+        /**
+         * `fairyring_lastloc_opvis` overlaps `fairyring_lastloc` with one more high bit; the ring
+         * shows `Last-destination (<code>)` only while that bit is set.
+         */
+        private const val LAST_DESTINATION_SHOWN = 64
+
+        /** The travel log's "Search for destination:" prompt; `meslayer_mode20` opens layer 28. */
+        private const val SEARCH_MESLAYER_MODE = 28
         private const val ZANARIS_CODE = "BKS"
 
         private const val NO_FAIRY_MAGIC = "The fairy rings only work for those who wield fairy magic."
