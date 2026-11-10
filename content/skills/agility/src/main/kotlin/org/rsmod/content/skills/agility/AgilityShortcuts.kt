@@ -14,6 +14,11 @@ import org.rsmod.api.player.protect.ProtectedAccess
 import org.rsmod.api.player.stat.agilityLvl
 import org.rsmod.api.player.stat.rangedLvl
 import org.rsmod.api.player.stat.strengthLvl
+import org.rsmod.api.script.onApLoc1
+import org.rsmod.api.script.onApLoc2
+import org.rsmod.api.script.onApLoc3
+import org.rsmod.api.script.onApLoc4
+import org.rsmod.api.script.onApLoc5
 import org.rsmod.api.script.onOpLoc1
 import org.rsmod.api.script.onOpLoc2
 import org.rsmod.api.script.onOpLoc3
@@ -261,6 +266,16 @@ constructor(private val collision: CollisionFlagMap, private val xpMods: XpModif
                     (1..5).firstOrNull {
                         type.actions.getOpOrNull(it - 1).equals(shortcut.option, ignoreCase = true)
                     } ?: continue
+                if (loc in CROSSED_FROM_BANK) {
+                    when (slot) {
+                        1 -> onApLoc1(loc) { crossFromBank(it.loc, shortcut) }
+                        2 -> onApLoc2(loc) { crossFromBank(it.loc, shortcut) }
+                        3 -> onApLoc3(loc) { crossFromBank(it.loc, shortcut) }
+                        4 -> onApLoc4(loc) { crossFromBank(it.loc, shortcut) }
+                        else -> onApLoc5(loc) { crossFromBank(it.loc, shortcut) }
+                    }
+                    continue
+                }
                 when (slot) {
                     1 -> onOpLoc1(loc) { cross(it.loc, shortcut) }
                     2 -> onOpLoc2(loc) { cross(it.loc, shortcut) }
@@ -270,6 +285,26 @@ constructor(private val collision: CollisionFlagMap, private val xpMods: XpModif
                 }
             }
         }
+    }
+
+    /**
+     * A loc standing in water with no tile beside it to stand on: the client can never reach it, so
+     * the crossing starts once the player is in range and sight of it, from the nearest bank tile
+     * a link starts on.
+     */
+    private suspend fun ProtectedAccess.crossFromBank(loc: BoundLocInfo, shortcut: Shortcut) {
+        if (!isWithinApRange(loc, BANK_AP_RANGE)) {
+            return
+        }
+        val origin = shortcut.links.keys.minByOrNull { it.chebyshevDistance(coords) } ?: return
+        if (coords != origin) {
+            playerWalk(origin)
+        }
+        if (coords != origin) {
+            mes("I can't reach that!")
+            return
+        }
+        cross(loc, shortcut)
     }
 
     private suspend fun ProtectedAccess.cross(loc: BoundLocInfo, shortcut: Shortcut) {
@@ -389,6 +424,10 @@ constructor(private val collision: CollisionFlagMap, private val xpMods: XpModif
 
     private companion object {
         const val SEARCH_DEPTH = 2
+        const val BANK_AP_RANGE = 3
+
+        /** Locs in water that no player can stand beside; see [crossFromBank]. */
+        val CROSSED_FROM_BANK = setOf("loc.snakeboss_steppingstone")
         const val CLIMBING_BOOTS = "obj.death_climbingboots"
     }
 }
