@@ -185,6 +185,10 @@ Quetzals read Jagex's own `dbtable.quetzal`. Every landing site is marked built 
 Promise and the Hunter landing-site builds are not required), and flights are a fade rather than
 the flying cutscene.
 
+Teleport scrolls land on the tiles in `enum.teleport_scroll_destinations` (the wiki's map squares,
+all ground level) and need no unlocks; the Revenant cave scroll, which offers three Wilderness
+entrances, is not handled yet.
+
 Magic carpets use the `carpet_shantay` and `carpet_pollnivneach` rows (hub first). Rides are free,
 fly a straight line at 3 tiles a tick with no banking turns or sound, and need no quests (Uzer,
 Sophanem and Menaphos included).

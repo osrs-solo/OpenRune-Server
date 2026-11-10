@@ -185,6 +185,39 @@ class TeleportChargesTest {
         assertEquals(0, f.charges())
     }
 
+    @Test
+    fun `reading a teleport scroll takes exactly one from its stack`() {
+        val f = Fixture()
+        f.player.inv[4] = InvObj(SCROLL, 5)
+        assertTrue(f.run { TeleportScrolls.takeOne(this, SCROLL, 4) })
+        assertEquals(4, f.player.inv.count(SCROLL))
+        assertTrue(f.player.inv[4].isType(SCROLL))
+    }
+
+    @Test
+    fun `the last teleport scroll empties its slot`() {
+        val f = Fixture()
+        f.player.inv[0] = InvObj(SCROLL)
+        assertTrue(f.run { TeleportScrolls.takeOne(this, SCROLL, 0) })
+        assertNull(f.player.inv[0])
+        assertEquals(0, f.player.inv.count(SCROLL))
+    }
+
+    @Test
+    fun `a teleport scroll that moved or ran out takes nothing`() {
+        val f = Fixture()
+        f.player.inv[1] = InvObj(SCROLL, 2)
+        f.player.inv[2] = InvObj("obj.coins", 10)
+        assertFalse(f.run { TeleportScrolls.takeOne(this, SCROLL, 0) })
+        assertFalse(f.run { TeleportScrolls.takeOne(this, SCROLL, 2) })
+        assertEquals(2, f.player.inv.count(SCROLL))
+        assertEquals(10, f.player.inv.count("obj.coins"))
+        assertTrue(f.run { TeleportScrolls.takeOne(this, SCROLL, 1) })
+        assertTrue(f.run { TeleportScrolls.takeOne(this, SCROLL, 1) })
+        assertFalse(f.run { TeleportScrolls.takeOne(this, SCROLL, 1) })
+        assertEquals(0, f.player.inv.count(SCROLL))
+    }
+
     private class Fixture {
         private val coroutine = GameCoroutine("teleport-charges-test")
         private val context =
@@ -259,6 +292,7 @@ class TeleportChargesTest {
         private const val FANG = "obj.lizardman_fang"
         private const val CHARGES = "varbit.charges_xerics_talisman_quantity"
         private const val RING_SLOT = 12
+        private const val SCROLL = "obj.teleportscroll_zulandra"
         private val restored = mutableListOf<() -> Unit>()
 
         private fun invType(name: String) =

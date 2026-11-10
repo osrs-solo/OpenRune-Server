@@ -304,6 +304,7 @@ teleport_route_90 = 56490
 
 [gamevals.enum]
 minigames_list_rows = 5923
+teleport_scroll_destinations = 56500
 
 [gamevals.queue]
 minigame_teleport = 64403
