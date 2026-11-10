@@ -281,7 +281,7 @@ constructor(
 
         /** The ring of flowers that springs up around a player as the fairy magic takes them. */
         private const val FLOWER_RING = "spotanim.fairy_flower_ring"
-        private const val TELEPORT_SOUND = "synth.fairy_teleport"
+        private const val TELEPORT_SOUND = "synth.ft_fairy_teleport"
         private const val VANISH_DELAY = 2
         private const val ACTION_DELAY = 4
     }
