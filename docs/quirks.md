@@ -146,25 +146,24 @@ to the bank first, then inventory if necessary; Ultimate Ironmen use inventory o
 ## Teleport items
 
 Destinations live in the `teleport_destination` dbtable and the items that use them in
-`teleport_item` (`content/travel/teleports`). Known differences from OSRS:
+`teleport_item` (`content/travel/teleports`). Teleport jewellery, Xeric's talisman, skill capes,
+spirit trees and fairy rings are their own modules. Known differences from OSRS:
 
-- Every destination is open: quest, diary and unlock requirements (Fortis Colosseum, Tears of
-  Guthix, Xeric's Honour, Darkmeyer, Slepe, Wyrmscraig, Miscellania, ...) are not checked.
+- Every destination is open: quest, diary and unlock requirements (Darkmeyer, Slepe, ...) are not
+  checked.
 - A destination whose map region is missing tells the player so instead of teleporting, and no
   charge is spent.
-- All items use the standard jewellery teleport animation; the ectophial, seed pod and Xeric's
-  talisman do not play their own.
+- All items use the standard jewellery teleport animation; the ectophial and seed pods do not play
+  their own.
 - Achievement diary rewards (Ardougne cloak, Karamja gloves, desert amulet, Morytania legs,
   Fremennik sea boots, Kandarin headgear, wilderness sword, western banner, Explorer's ring, Rada's
   blessing) teleport without their daily limits. Tiers that cannot teleport in OSRS (desert amulet
   1, western banner 1 and 2, and so on) still cannot.
 - Kharedst's memoirs and the Book of the Dead spend `veos_memoir_charges`, but recharging at the
   Old Memorial and adding pages are not implemented.
-- Xeric's talisman and memoir charges sit in player varbits (as the cache's `charges_*` varbits
-  do), so every copy a player owns shares one pool. Uncharging refunds that pool once.
+- Memoir charges sit in a player varbit, so every copy a player owns shares one pool.
 - The camulet has unlimited charges, as if Lazim had upgraded it, and both destinations are open.
   The grand seed pod is used up by `Squash`; its `Launch` op is not implemented.
-- The slayer ring's `Rub` (contact master) and the ring of wealth's `Features` are not implemented.
 
 Wilderness obelisks use the `wilderness_obelisk` rows. `Set Destination` and `Teleport to
 Destination` need no Wilderness diary and do not remember a choice: both open the list and send
@@ -205,14 +204,8 @@ others) are not bound, and the Entrana and Void Knight ferries keep their own sc
 Minigame teleports (Grouping tab) use the `minigame` rows, matched by name to Jagex's
 `minigame_teleport` rows. They play the home-teleport cast and share Jagex's 20-minute cooldown
 (varp 888, which also greys the Grouping Teleport button), but need no minigame unlocks. The
-cooldown message wording is a guess. The Minigame Teleport spell
-opens the scrolling `minigames` list, where Select teleports; the Grouping tab's Teleport button
-works too. The channels tab buttons open their panels.
-
-Spirit trees use the `spirit_tree` rows of the same table. Every tree's `Talk-to` opens the travel
-list too, so trees still showing their pre-quest form work. Only the eight permanent trees are
-listed: farmed trees and the POH tree are not stops yet, and the trees have no teleport animation,
-only the message. Fairy rings read Jagex's own `dbtable.fairyring` and need a dramen or lunar staff,
-but no quest progress.
+cooldown message wording is a guess. The Minigame Teleport spell opens the scrolling `minigames`
+list, where Select teleports; the Grouping tab's Teleport button works too. The channels tab
+buttons open their panels.
 
 [magic-numbers]: https://en.wikipedia.org/wiki/Magic_number_(programming)

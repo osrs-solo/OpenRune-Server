@@ -26,8 +26,6 @@ class TeleportItem(
     val unlimited: Boolean = false,
     val chargeVarbit: String? = null,
     val maxCharges: Int? = null,
-    val chargeObj: String? = null,
-    val inert: String? = null,
     val departMessage: String? = null,
     val arriveMessage: String? = null,
 ) {
@@ -54,12 +52,6 @@ class TeleportItem(
         val index = objs.indexOf(obj)
         return if (!isChain || index == -1) null else objs.size - index - 1
     }
-
-    /** How many of [available] charge objs fit on top of [current] charges. */
-    fun chargesToAdd(current: Int, available: Int): Int {
-        val cap = maxCharges ?: return 0
-        return available.coerceAtMost(cap - current).coerceAtLeast(0)
-    }
 }
 
 object TeleportItems {
@@ -81,8 +73,6 @@ object TeleportItems {
                 chargeVarbit =
                     row.chargeVarbit?.let { RSCM.getReverseMapping(RSCMType.VARBIT, it) },
                 maxCharges = row.maxCharges,
-                chargeObj = row.chargeObj?.rscm(),
-                inert = row.inert?.rscm(),
                 departMessage = row.departMessage,
                 arriveMessage = row.arriveMessage,
             )

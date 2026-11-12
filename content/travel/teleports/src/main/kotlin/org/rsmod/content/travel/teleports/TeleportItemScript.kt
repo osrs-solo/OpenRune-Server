@@ -18,7 +18,6 @@ import org.rsmod.api.script.onOpHeld3
 import org.rsmod.api.script.onOpHeld4
 import org.rsmod.api.script.onOpHeld5
 import org.rsmod.api.script.onOpHeldSubOp
-import org.rsmod.api.script.onOpHeldU
 import org.rsmod.api.script.onOpWorn2
 import org.rsmod.api.script.onOpWorn3
 import org.rsmod.api.script.onOpWorn4
@@ -27,11 +26,9 @@ import org.rsmod.api.script.onOpWorn6
 import org.rsmod.api.script.onOpWorn7
 import org.rsmod.api.script.onOpWorn8
 import org.rsmod.api.script.onOpWorn9
-import org.rsmod.content.travel.teleports.TeleportCharges.charge
 import org.rsmod.content.travel.teleports.TeleportCharges.checkCharges
 import org.rsmod.content.travel.teleports.TeleportCharges.hasCharge
 import org.rsmod.content.travel.teleports.TeleportCharges.spendCharge
-import org.rsmod.content.travel.teleports.TeleportCharges.uncharge
 import org.rsmod.game.inv.Inventory
 import org.rsmod.game.map.collision.isZoneValid
 import org.rsmod.plugin.scripts.PluginScript
@@ -39,8 +36,8 @@ import org.rsmod.plugin.scripts.ScriptContext
 import org.rsmod.routefinder.collision.CollisionFlagMap
 
 /**
- * Every item in the `teleport_item` table: teleport jewellery, Xeric's talisman, Kharedst's
- * memoirs, Drakan's medallion, Ardougne cloaks, the royal seed pod and the ectophial.
+ * Every item in the `teleport_item` table: Kharedst's memoirs, Drakan's medallion, achievement
+ * diary rewards, the royal and grand seed pods, the camulet and the ectophial.
  *
  * Which op does what is read from the obj's own cache ops, so the table only says where to go:
  * - the held `Teleport` op (or `Rub`, `Reminisce`, `Commune`, `Empty`) opens a menu of the
@@ -59,11 +56,6 @@ constructor(
     override fun ScriptContext.startup() {
         for (item in TeleportItems.all) {
             item.objs.forEach { register(item, it) }
-            val chargeObj = item.chargeObj ?: continue
-            for (target in item.objs + listOfNotNull(item.inert)) {
-                onOpHeldU(chargeObj, target) { charge(item, it.secondSlot) }
-            }
-            item.inert?.let { inert -> registerCheck(item, inert) }
         }
     }
 
@@ -98,20 +90,10 @@ constructor(
             logger.warn { "No teleport op on $obj: $ops" }
         }
 
-        val rub = ops.indexOf("Rub")
-        if (usable(rub) && rub != menuOp) {
-            onHeldOp(rub, obj) { _, _ ->
-                mes("Contacting your Slayer master is not available yet.")
-            }
-        }
         if (item.chargeVarbit != null) {
             CHECK_OPS.firstNotNullOfOrNull { ops.indexOf(it).takeIf(::usable) }?.let { check ->
                 onHeldOp(check, obj) { _, _ -> checkCharges(item) }
             }
-        }
-        val uncharge = ops.indexOf("Uncharge")
-        if (usable(uncharge) && item.inert != null) {
-            onHeldOp(uncharge, obj) { inv, slot -> uncharge(item, inv, slot) }
         }
         registerWorn(item, obj, type)
     }
@@ -161,14 +143,6 @@ constructor(
                     onWornOp(op, obj) { slot -> teleport(item, worn, slot, destination) }
                 }
             }
-        }
-    }
-
-    private fun ScriptContext.registerCheck(item: TeleportItem, obj: String) {
-        val ops = obj.type().interfaceOptions
-        val check = CHECK_OPS.firstNotNullOfOrNull { ops.indexOf(it).takeIf { i -> i != -1 } }
-        if (check != null) {
-            onHeldOp(check, obj) { _, _ -> checkCharges(item) }
         }
     }
 

@@ -24,13 +24,13 @@ class TeleportItemTest {
             destinations = somewhere,
         )
 
-    private val talisman =
+    private val memoirs =
         TeleportItem(
-            label = "talisman",
-            objs = listOf("obj.xeric_talisman"),
+            label = "book",
+            objs = listOf("obj.veos_kharedsts_memoirs"),
             destinations = somewhere,
-            chargeVarbit = "varbit.charges_xerics_talisman_quantity",
-            maxCharges = 1000,
+            chargeVarbit = "varbit.veos_memoir_charges",
+            maxCharges = 100,
         )
 
     @Test
@@ -46,17 +46,8 @@ class TeleportItemTest {
     fun `objs outside the chain and varbit items keep their obj`() {
         assertEquals("obj.coins", glory.afterCharge("obj.coins"))
         assertNull(glory.chargesAfter("obj.coins"))
-        assertEquals("obj.xeric_talisman", talisman.afterCharge("obj.xeric_talisman"))
-        assertNull(talisman.chargesAfter("obj.xeric_talisman"))
-    }
-
-    @Test
-    fun `charging never goes past the cap or below zero`() {
-        assertEquals(10, talisman.chargesToAdd(current = 0, available = 10))
-        assertEquals(2, talisman.chargesToAdd(current = 998, available = 10))
-        assertEquals(0, talisman.chargesToAdd(current = 1000, available = 10))
-        assertEquals(0, talisman.chargesToAdd(current = 1200, available = 10))
-        assertEquals(1000, talisman.chargesToAdd(current = 0, available = Int.MAX_VALUE))
-        assertEquals(0, glory.chargesToAdd(current = 0, available = 10))
+        val book = "obj.veos_kharedsts_memoirs"
+        assertEquals(book, memoirs.afterCharge(book))
+        assertNull(memoirs.chargesAfter(book))
     }
 }

@@ -1,324 +1,325 @@
 package org.rsmod.content.travel.fairyrings
 
-import dev.openrune.rscm.RSCM.asRSCM
+import dev.openrune.ServerCacheManager
+import dev.openrune.rscm.RSCM
 import dev.openrune.rscm.RSCMType
 import dev.openrune.types.aconverted.interf.IfButtonOp
 import dev.openrune.util.Wearpos
 import jakarta.inject.Inject
-import org.rsmod.api.area.checker.AreaChecker
-import org.rsmod.api.player.hook.PlayerTeleportValidator
-import org.rsmod.api.player.hook.TeleportType
-import org.rsmod.api.player.output.ChatType
+import org.rsmod.api.enums.NamedEnums.fairyring_visited_varbits
 import org.rsmod.api.player.output.ClientScripts.mesLayerClose
 import org.rsmod.api.player.protect.ProtectedAccess
-import org.rsmod.api.player.vars.VarPlayerIntMapDelegate
-import org.rsmod.api.player.vars.intVarBit
+import org.rsmod.api.script.onIfClose
 import org.rsmod.api.script.onIfModalButton
 import org.rsmod.api.script.onOpLoc1
 import org.rsmod.api.script.onOpLoc2
 import org.rsmod.api.script.onOpLoc3
-import org.rsmod.api.script.onOpLoc4
-import org.rsmod.api.script.onPlayerLogin
-import org.rsmod.game.entity.Player
+import org.rsmod.api.table.FairyringRequirementsRow
+import org.rsmod.api.table.FairyringRow
+import org.rsmod.content.quest.manager.QuestRequirements
+import org.rsmod.game.inv.isType
 import org.rsmod.plugin.scripts.PluginScript
 import org.rsmod.plugin.scripts.ScriptContext
 
-/**
- * Fairy rings: the mushroom circles that teleport a player wielding a dramen or lunar staff to
- * whichever ring the three-letter code on the dials names.
- *
- * What the cache provides and this script leans on:
- * - `dbtable.fairyring` lists every code with its landing tile, its travel log entry and its
- *   `multiloc_state` index; see [FairyRings].
- * - The ring interface (`interface.fairyrings`) rotates its dials client-side by writing
- *   `varbit.fairyring_1..3` and sends each rotation as a button press, so the server mirrors the
- *   rotation into the same varbits and reads them back when `Confirm` arrives.
- * - The travel log (`interface.fairyrings_log`) draws only the entries whose text is non-empty,
- *   so the visited codes and the favourites are written into their components before the pair is
- *   opened, and again (with the side panel re-opened) whenever a favourite changes.
- * - Favourite slots are `varbit.fairyring_fave_<slot>_1..3` (the dial values) plus
- *   `varbit.fairyring_fave_set_<slot>`; the last destination is `varbit.fairyring_lastloc`.
- *
- * Codes the cache points at its placeholder tile, or that match the tile the player stands on,
- * only earn the "hardly moved at all" line, as they do officially.
- */
-class FairyRingScript
-@Inject
-constructor(
-    private val teleportValidator: PlayerTeleportValidator,
-    private val areaChecker: AreaChecker,
-) : PluginScript() {
-    private lateinit var rings: FairyRings
-    private val staffs: Set<Int> = STAFFS.map { it.asRSCM(RSCMType.OBJ) }.toSet()
-
-    private var ProtectedAccess.lastDestination by intVarBit("varbit.fairyring_lastloc")
-    private var Player.lastDestinationOp by intVarBit("varbit.fairyring_lastloc_opvis")
-    private var Player.favouritesOp by intVarBit("varbit.fairyrings_favourite_opvis")
+class FairyRingScript @Inject constructor() : PluginScript() {
+    private val rings: Map<Int, FairyringRow> = FairyringRow.all().associateBy { it.id }
+    private val requirements: Map<Int, FairyringRequirementsRow> =
+        FairyringRequirementsRow.all().associateBy { it.ring }
+    private val textButtons: Map<FairyringRow, String> =
+        rings.values.associateWith {
+            RSCM.getReverseMapping(RSCMType.COMPONENT, it.textComponent.packed)
+        }
 
     override fun ScriptContext.startup() {
-        rings = FairyRings.load()
-
-        onPlayerLogin {
-            if (player.lastDestinationOp in 1 until LAST_DESTINATION_SHOWN) {
-                player.lastDestinationOp += LAST_DESTINATION_SHOWN
-            }
-            player.syncFavouritesOp()
+        onOpLoc1(MINOR_HUB) { zanaris() }
+        for (hub in HUBS) {
+            onOpLoc2(hub) { configure() }
+            onOpLoc3(hub) { lastDestination() }
         }
-
-        for (loc in RING_LOCS) {
-            onOpLoc1(loc) { zanaris() }
-            onOpLoc2(loc) { configure() }
-            onOpLoc3(loc) { lastDestination() }
-            onOpLoc4(loc) { favourites() }
-        }
-
-        for ((dial, varbit) in DIAL_VARBITS.withIndex()) {
-            onIfModalButton("component.fairyrings:${dial + 1}_clockwise") { rotate(varbit, 1) }
-            onIfModalButton("component.fairyrings:${dial + 1}_anticlockwise") {
-                rotate(varbit, -1)
-            }
+        DIAL_BUTTONS.forEachIndexed { index, (clockwise, anticlockwise) ->
+            onIfModalButton(clockwise) { rotate(index, CLOCKWISE_STEP) }
+            onIfModalButton(anticlockwise) { rotate(index, ANTICLOCKWISE_STEP) }
         }
         onIfModalButton("component.fairyrings:confirm") { confirm() }
-
-        for (ring in rings.all) {
-            onIfModalButton(ring.logComponent) {
-                when (it.op) {
-                    IfButtonOp.Op1 -> useCode(ring)
-                    IfButtonOp.Op2 -> addFavourite(ring)
-                    else -> {}
-                }
+        onIfClose(MAIN) { mesLayerClose(player, SEARCH_LAYER_MODE) }
+        for ((ring, button) in textButtons) {
+            onIfModalButton(button) {
+                if (it.op == IfButtonOp.Op2) addFavourite(ring.id) else useCode(ring.id)
             }
-            onIfModalButton(ring.favouriteIconComponent) { addFavourite(ring) }
+            val icon = RSCM.getReverseMapping(RSCMType.COMPONENT, ring.faveIconComponent.packed)
+            onIfModalButton(icon) { addFavourite(ring.id) }
         }
-        for (slot in 1..FAVOURITE_SLOTS) {
-            onIfModalButton("component.fairyrings_log:fave_$slot") {
-                when (it.op) {
-                    IfButtonOp.Op1 -> favourite(slot)?.let { ring -> useCode(ring) }
-                    IfButtonOp.Op2 -> removeFavourite(slot)
-                    else -> {}
-                }
+        FAVOURITE_TEXTS.forEachIndexed { slot, button ->
+            onIfModalButton(button) {
+                val id = favourites().getOrNull(slot) ?: return@onIfModalButton
+                if (it.op == IfButtonOp.Op2) removeFavourite(id) else useCode(id)
             }
-            onIfModalButton("component.fairyrings_log:fave_icon_$slot") { removeFavourite(slot) }
         }
     }
 
-    /* Ring ops */
+    private fun ProtectedAccess.favourites(): List<Int> =
+        FAVOURITE_VARBITS.map { vars[it] }
+            .filter { it >= FAVOURITE_SET }
+            .map { indexToId(it - FAVOURITE_SET) }
+
+    private fun ProtectedAccess.storeFavourites(ids: List<Int>) {
+        FAVOURITE_VARBITS.forEachIndexed { slot, varbit ->
+            val id = ids.getOrNull(slot)
+            vars[varbit] = if (id == null) 0 else FAVOURITE_SET + idToIndex(id)
+        }
+        refreshFavourites(ids)
+    }
+
+    private fun ProtectedAccess.refreshFavourites(ids: List<Int> = favourites()) {
+        FAVOURITE_TEXTS.forEachIndexed { slot, text ->
+            val ring = ids.getOrNull(slot)?.let { rings[it] }
+            ifSetText(text, ring?.desc ?: "")
+            ifSetText(FAVOURITE_CODES[slot], ring?.code ?: "")
+        }
+    }
+
+    private fun ProtectedAccess.addFavourite(id: Int) {
+        val current = favourites()
+        if (id in current) {
+            return
+        }
+        if (current.size >= FAVOURITE_VARBITS.size) {
+            mes("Your favourites list is full.")
+            return
+        }
+        storeFavourites(current + id)
+    }
+
+    private fun ProtectedAccess.removeFavourite(id: Int) {
+        storeFavourites(favourites() - id)
+    }
+
+    private fun dials(id: Int): List<Int> = listOf(id / 100, id / 10 % 10, id % 10)
+
+    private fun dialsToId(dials: List<Int>): Int = dials[0] * 100 + dials[1] * 10 + dials[2]
+
+    private fun idToIndex(id: Int): Int = dials(id).let { (a, b, c) -> a * 16 + b * 4 + c }
+
+    private fun indexToId(index: Int): Int = dialsToId(listOf(index / 16, index / 4 % 4, index % 4))
+
+    private fun ProtectedAccess.canUse(): Boolean {
+        if (!hasPermission()) {
+            // UNVERIFIED: the real message for using a ring without the Godfather's permission.
+            mes("You don't have permission to use the fairy rings.")
+            return false
+        }
+        if (!hasFairyMagic()) {
+            mes("The fairy ring only works for those who wield fairy magic.")
+            return false
+        }
+        return true
+    }
+
+    private fun ProtectedAccess.hasPermission(): Boolean {
+        if (vars["varbit.fairyring_use"] >= 1 && vars["varbit.fairyring_permission"] >= 2) {
+            return true
+        }
+        return QuestRequirements.hasCompleted(player, "quest_fairytale1") &&
+            (QuestRequirements.isOnQuest(player, FAIRYTALE_2) ||
+                QuestRequirements.hasCompleted(player, FAIRYTALE_2))
+    }
+
+    private fun ProtectedAccess.hasFairyMagic(): Boolean {
+        val staff = player.worn[Wearpos.RightHand.slot]
+        return vars["varbit.lumbridge_diary_elite_complete"] != 0 ||
+            STAFFS.any { staff.isType(it) } ||
+            rings.values.any {
+                it.noStaffReturn == true &&
+                    player.coords.chebyshevDistance(it.destCoord) <= RING_RADIUS
+            }
+    }
 
     private suspend fun ProtectedAccess.zanaris() {
-        val ring = rings.byCode(ZANARIS_CODE) ?: return
-        travel(ring, remember = false)
+        if (canUse()) {
+            travel(rings.getValue(ZANARIS_RING))
+        }
     }
 
     private fun ProtectedAccess.configure() {
-        if (!hasFairyMagic()) {
-            mes(NO_FAIRY_MAGIC)
+        if (!canUse()) {
             return
         }
-        refreshLog()
-        ifOpenMainSidePair(RING_INTERFACE, LOG_INTERFACE)
+        for (dial in DIAL_VARBITS) {
+            vars[dial] = 0
+        }
+        for ((ring, button) in textButtons) {
+            ifSetText(button, if (visited(ring)) ring.desc ?: "" else "")
+        }
+        refreshFavourites()
+        ifOpenMainSidePair(
+            MAIN,
+            "interface.fairyrings_log",
+            colour = BACKGROUND_COLOUR,
+            transparency = BACKGROUND_TRANSPARENCY,
+        )
     }
 
-    private suspend fun ProtectedAccess.lastDestination() {
-        val ring = rings.byLogIndex(lastDestination)
-        if (ring == null || ring.destination == null) {
-            mes("You have not travelled anywhere by fairy ring yet.")
-            return
-        }
-        travel(ring)
+    private fun ProtectedAccess.visited(ring: FairyringRow): Boolean {
+        val varbit = visitedVarbit(ring) ?: return true
+        return player.vars[varbit] != 0
     }
 
-    private suspend fun ProtectedAccess.favourites() {
-        if (!hasFairyMagic()) {
-            mes(NO_FAIRY_MAGIC)
-            return
-        }
-        val favourites = (1..FAVOURITE_SLOTS).mapNotNull { favourite(it) }
-        if (favourites.isEmpty()) {
-            mes("You have no favourite fairy ring codes. Add some from the travel log.")
-            return
-        }
-        val labels = favourites.map { ring -> "${ring.code} - ${ring.description ?: "Nowhere"}" }
-        val picked = menu("Favourite fairy rings", hotkeys = true, choices = labels + "Cancel")
-        val ring = favourites.getOrNull(picked) ?: return
-        travel(ring)
+    private fun visitedVarbit(ring: FairyringRow) =
+        fairyring_visited_varbits[ring.id]?.let { ServerCacheManager.getVarbit(it) }
+
+    private fun ProtectedAccess.rotate(dial: Int, step: Int) {
+        val varbit = DIAL_VARBITS[dial]
+        vars[varbit] = (vars[varbit] + step) % DIAL_POSITIONS
+        soundSynth(DIAL_SOUND)
     }
 
-    /* Ring interface */
-
-    private fun ProtectedAccess.rotate(varbit: String, steps: Int) {
-        vars[varbit] = FairyRingDials.rotate(vars[varbit], steps)
+    private fun ProtectedAccess.useCode(id: Int) {
+        dials(id).forEachIndexed { index, position -> vars[DIAL_VARBITS[index]] = position }
+        soundSynth(DIAL_SOUND)
     }
 
     private suspend fun ProtectedAccess.confirm() {
-        val ring = rings.byDials(dials()) ?: return
-        travel(ring)
-    }
-
-    private fun ProtectedAccess.dials(): List<Int> = DIAL_VARBITS.map { vars[it] }
-
-    /** Spins the dials round to [ring]'s code; the client redraws them from the varbits. */
-    private fun ProtectedAccess.useCode(ring: FairyRing) {
-        for ((dial, varbit) in DIAL_VARBITS.withIndex()) {
-            vars[varbit] = ring.dials[dial]
-        }
-    }
-
-    /* Travel log */
-
-    private fun ProtectedAccess.refreshLog() {
-        for (ring in rings.all) {
-            val text = if (hasVisited(ring)) ring.logText else ""
-            ifSetText(ring.logComponent, text)
-        }
-        for (slot in 1..FAVOURITE_SLOTS) {
-            val ring = favourite(slot)
-            // The favourites list draws the code from `fave_code_<slot>` (in its own colour) over
-            // the entry, so the entry itself only carries the location on its second line.
-            val description = ring?.description?.let { "<br>$it" }.orEmpty()
-            ifSetText("component.fairyrings_log:fave_$slot", description)
-            ifSetText("component.fairyrings_log:fave_code_$slot", ring?.spacedCode.orEmpty())
-        }
-    }
-
-    private fun ProtectedAccess.reopenLog() {
-        refreshLog()
-        ifOpenSide(LOG_INTERFACE)
-    }
-
-    private fun ProtectedAccess.hasVisited(ring: FairyRing): Boolean {
-        val varbit = ring.visitedVarBit ?: return false
-        return vars[varbit] != 0
-    }
-
-    private fun ProtectedAccess.markVisited(ring: FairyRing) {
-        val varbit = ring.visitedVarBit ?: return
-        vars[varbit] = 1
-    }
-
-    /* Favourites */
-
-    private fun ProtectedAccess.favourite(slot: Int): FairyRing? {
-        if (vars["varbit.fairyring_fave_set_$slot"] == 0) {
-            return null
-        }
-        val dials = (1..FairyRingDials.COUNT).map { vars["varbit.fairyring_fave_${slot}_$it"] }
-        return rings.byDials(dials)
-    }
-
-    private fun ProtectedAccess.addFavourite(ring: FairyRing) {
-        if ((1..FAVOURITE_SLOTS).any { favourite(it) == ring }) {
-            mes("${ring.code} is already one of your favourite codes.")
+        if (!canUse()) {
+            ifClose()
             return
         }
-        val slot = (1..FAVOURITE_SLOTS).firstOrNull { favourite(it) == null }
-        if (slot == null) {
-            mes("You can only have $FAVOURITE_SLOTS favourite fairy ring codes.")
-            return
-        }
-        for ((dial, value) in ring.dials.withIndex()) {
-            vars["varbit.fairyring_fave_${slot}_${dial + 1}"] = value
-        }
-        vars["varbit.fairyring_fave_set_$slot"] = 1
-        player.syncFavouritesOp()
-        reopenLog()
-    }
-
-    private fun ProtectedAccess.removeFavourite(slot: Int) {
-        if (favourite(slot) == null) {
-            return
-        }
-        vars["varbit.fairyring_fave_set_$slot"] = 0
-        player.syncFavouritesOp()
-        reopenLog()
-    }
-
-    /** The ring's `Favourites` op shows only while this holds a bit for some filled slot. */
-    private fun Player.syncFavouritesOp() {
-        val vars = VarPlayerIntMapDelegate(client, this.vars, processedMapClock > 0, this)
-        favouritesOp =
-            (1..FAVOURITE_SLOTS)
-                .filter { vars["varbit.fairyring_fave_set_$it"] != 0 }
-                .sumOf { 1 shl (it - 1) }
-    }
-
-    /* Teleport */
-
-    private fun ProtectedAccess.hasFairyMagic(): Boolean {
-        val weapon = player.worn[Wearpos.RightHand.slot] ?: return false
-        return weapon.id in staffs
-    }
-
-    private suspend fun ProtectedAccess.travel(ring: FairyRing, remember: Boolean = true) {
-        if (!hasFairyMagic()) {
-            mes(NO_FAIRY_MAGIC)
-            return
-        }
-        if (actionDelay > mapClock) {
-            return
-        }
-        val denial = teleportValidator.validate(player, TeleportType.Standard, areaChecker)
-        if (denial != null) {
-            mes(denial, ChatType.Engine)
-            return
-        }
+        val id = dialsToId(DIAL_VARBITS.map { vars[it] })
+        vars["varp.fairyring_destination1"] = id
+        vars[LAST_LOCATION] = idToIndex(id)
+        vars[LAST_LOCATION_SET] = 1
         ifClose()
-        mesLayerClose(player, SEARCH_MESLAYER_MODE)
-        actionDelay = mapClock + ACTION_DELAY
-        anim(VANISH_ANIM)
-        spotanim(FLOWER_RING)
-        soundSynth(TELEPORT_SOUND)
-        delay(VANISH_DELAY)
-        val destination = ring.destination
-        if (destination == null || destination == coords) {
-            anim(APPEAR_ANIM)
-            mes(HARDLY_MOVED)
+        delay(1)
+        travel(rings[id])
+    }
+
+    private suspend fun ProtectedAccess.lastDestination() {
+        if (vars[LAST_LOCATION_SET] == 0 || !canUse()) {
             return
         }
-        // Validated before the ring started spinning; a teleblock landing mid-spin must not stop
-        // a teleport that has already begun.
-        telejump(destination, TeleportType.Exempt)
-        anim(APPEAR_ANIM)
-        markVisited(ring)
-        if (remember) {
-            player.lastDestinationOp = LAST_DESTINATION_SHOWN + ring.logIndex
+        travel(rings[indexToId(vars[LAST_LOCATION])])
+    }
+
+    private suspend fun ProtectedAccess.travel(ring: FairyringRow?) {
+        val here =
+            rings.values.firstOrNull {
+                player.coords.chebyshevDistance(it.destCoord) <= STANDING_RADIUS
+            }
+        anim("seq.human_fairy_vanish", delay = VANISH_ANIM_DELAY)
+        spotanim("spotanim.fairy_flower_ring")
+        soundSynth("synth.ft_fairy_teleport")
+        delay(TELEPORT_DELAY)
+        val reachable = ring != null && ring != here && ring.destCoord.x >= MIN_VALID_COORD
+        val locked = ring?.let { lockedMessage(it) }
+        if (!reachable || locked != null) {
+            telejump(here?.destCoord ?: player.coords)
+            anim(APPEAR_ANIM)
+            delay(1)
+            if (locked != null && reachable) {
+                mesbox(locked)
+            } else {
+                startDialogue {
+                    chatPlayer(neutral, "Wow, fairy magic sure is useful, I hardly moved at all!")
+                }
+            }
+            return
         }
+        telejump(ring.destCoord)
+        anim(APPEAR_ANIM)
+        visitedVarbit(ring)?.let { vars[it] = 1 }
+    }
+
+    private fun ProtectedAccess.lockedMessage(ring: FairyringRow): String? {
+        val requirement = requirements[ring.id] ?: return null
+        val quest = requirement.quest
+        if (quest != null) {
+            val done =
+                QuestRequirements.hasCompleted(player, quest) ||
+                    (requirement.questStarted == true && QuestRequirements.isOnQuest(player, quest))
+            if (!done) {
+                return requirement.message
+            }
+        }
+        val varbit = requirement.unlockVarbit?.let { ServerCacheManager.getVarbit(it) }
+        if (varbit != null && player.vars[varbit] == 0) {
+            return requirement.message
+        }
+        return null
     }
 
     private companion object {
-        private const val RING_INTERFACE = "interface.fairyrings"
-        private const val LOG_INTERFACE = "interface.fairyrings_log"
+        private const val MINOR_HUB = "loc.fairyring_minorhub"
+        private val HUBS = listOf(MINOR_HUB, "loc.fairyring_homehub")
 
-        /** Every ring the player can operate; the Zanaris hub has no `Zanaris` op of its own. */
-        private val RING_LOCS =
-            listOf("loc.fairyring_minorhub", "loc.fairyring_homehub", "loc.poh_fairy_ring")
+        private const val MAIN = "interface.fairyrings"
+        private const val BACKGROUND_COLOUR = 4212288
+        private const val SEARCH_LAYER_MODE = 28
+        private const val BACKGROUND_TRANSPARENCY = 50
 
-        private val STAFFS = listOf("obj.dramen_staff", "obj.lunar_moonclan_liminal_staff")
-
+        private val DIAL_BUTTONS =
+            listOf(
+                "component.fairyrings:1_clockwise" to "component.fairyrings:1_anticlockwise",
+                "component.fairyrings:2_clockwise" to "component.fairyrings:2_anticlockwise",
+                "component.fairyrings:3_clockwise" to "component.fairyrings:3_anticlockwise",
+            )
         private val DIAL_VARBITS =
             listOf("varbit.fairyring_1", "varbit.fairyring_2", "varbit.fairyring_3")
+        private val FAVOURITE_VARBITS =
+            listOf(
+                "varbit.fairyring_fave_1",
+                "varbit.fairyring_fave_2",
+                "varbit.fairyring_fave_3",
+                "varbit.fairyring_fave_4",
+                "varbit.fairyring_fave_5",
+                "varbit.fairyring_fave_6",
+                "varbit.fairyring_fave_7",
+                "varbit.fairyring_fave_8",
+                "varbit.fairyring_fave_9",
+                "varbit.fairyring_fave_10",
+            )
+        private val FAVOURITE_TEXTS =
+            listOf(
+                "component.fairyrings_log:fave_1",
+                "component.fairyrings_log:fave_2",
+                "component.fairyrings_log:fave_3",
+                "component.fairyrings_log:fave_4",
+                "component.fairyrings_log:fave_5",
+                "component.fairyrings_log:fave_6",
+                "component.fairyrings_log:fave_7",
+                "component.fairyrings_log:fave_8",
+                "component.fairyrings_log:fave_9",
+                "component.fairyrings_log:fave_10",
+            )
+        private val FAVOURITE_CODES =
+            listOf(
+                "component.fairyrings_log:fave_code_1",
+                "component.fairyrings_log:fave_code_2",
+                "component.fairyrings_log:fave_code_3",
+                "component.fairyrings_log:fave_code_4",
+                "component.fairyrings_log:fave_code_5",
+                "component.fairyrings_log:fave_code_6",
+                "component.fairyrings_log:fave_code_7",
+                "component.fairyrings_log:fave_code_8",
+                "component.fairyrings_log:fave_code_9",
+                "component.fairyrings_log:fave_code_10",
+            )
+        private const val FAVOURITE_SET = 64
+        private const val DIAL_POSITIONS = 4
+        private const val CLOCKWISE_STEP = 1
+        private const val ANTICLOCKWISE_STEP = 3
+        private const val DIAL_SOUND = "synth.ft_fairyrings"
 
-        private const val FAVOURITE_SLOTS = 10
+        private const val LAST_LOCATION = "varbit.fairyring_lastloc"
+        private const val LAST_LOCATION_SET = "varbit.fairyring_lastloc_set"
 
-        /**
-         * `fairyring_lastloc_opvis` overlaps `fairyring_lastloc` with one more high bit; the ring
-         * shows `Last-destination (<code>)` only while that bit is set.
-         */
-        private const val LAST_DESTINATION_SHOWN = 64
+        private const val FAIRYTALE_2 = "quest_fairytale2"
+        private val STAFFS = listOf("obj.dramen_staff", "obj.lunar_moonclan_liminal_staff")
+        private const val RING_RADIUS = 10
+        private const val STANDING_RADIUS = 2
+        private const val ZANARIS_RING = 321
 
-        /** The travel log's "Search for destination:" prompt; `meslayer_mode20` opens layer 28. */
-        private const val SEARCH_MESLAYER_MODE = 28
-        private const val ZANARIS_CODE = "BKS"
-
-        private const val NO_FAIRY_MAGIC = "The fairy rings only work for those who wield fairy magic."
-        private const val HARDLY_MOVED = "Wow, fairy magic sure is useful, I hardly moved at all!"
-
-        private const val VANISH_ANIM = "seq.human_fairy_vanish"
+        private const val VANISH_ANIM_DELAY = 30
         private const val APPEAR_ANIM = "seq.human_fairy_appear"
-
-        /** The ring of flowers that springs up around a player as the fairy magic takes them. */
-        private const val FLOWER_RING = "spotanim.fairy_flower_ring"
-        private const val TELEPORT_SOUND = "synth.ft_fairy_teleport"
-        private const val VANISH_DELAY = 2
-        private const val ACTION_DELAY = 4
+        private const val TELEPORT_DELAY = 3
+        private const val MIN_VALID_COORD = 64
     }
 }

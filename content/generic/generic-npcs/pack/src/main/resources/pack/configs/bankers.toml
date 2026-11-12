@@ -583,11 +583,6 @@ inherit = "npc.pest_squire_bank_man"
 contentGroup = "content.banker"
 
 [[npc]]
-id = "npc.warguild_banker"
-inherit = "npc.warguild_banker"
-contentGroup = "content.banker"
-
-[[npc]]
 id = "npc.ahoy_ghost_banker"
 inherit = "npc.ahoy_ghost_banker"
 contentGroup = "content.banker"
