@@ -10,10 +10,10 @@ import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import org.junit.jupiter.api.parallel.ResourceLock
 import org.rsmod.api.player.vars.VarPlayerIntMapSetter
-import org.rsmod.api.server.config.ServerConfig
 import org.rsmod.api.player.vars.autoEnableRunOnMove
 import org.rsmod.api.player.vars.setActiveMoveSpeed
 import org.rsmod.api.player.vars.varMoveSpeed
+import org.rsmod.api.server.config.ServerConfig
 import org.rsmod.game.entity.Player
 import org.rsmod.game.inv.Inventory
 import org.rsmod.game.movement.MoveSpeed

@@ -16,9 +16,9 @@ import org.junit.jupiter.api.parallel.ResourceLock
 import org.rsmod.annotations.InternalApi
 import org.rsmod.api.area.checker.AreaChecker
 import org.rsmod.api.death.PlayerDeath
-import org.rsmod.api.death.PlayerRespawnPoint
 import org.rsmod.api.death.PlayerDeathDrops
 import org.rsmod.api.death.PlayerDeathHandlingResolver
+import org.rsmod.api.death.PlayerRespawnPoint
 import org.rsmod.api.game.process.player.PlayerRegionProcessor
 import org.rsmod.api.inv.storage.PlayerItemStorage
 import org.rsmod.api.invtx.InvTransactionsScript
