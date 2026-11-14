@@ -1,6 +1,7 @@
 package org.rsmod.content.quest.manager
 
 import org.rsmod.api.combat.commons.magic.SpellQuestRequirement
+import org.rsmod.api.death.NpcAttackValidateHook
 import org.rsmod.api.death.NpcDeathKillHook
 import org.rsmod.api.player.hook.SpadeDigHook
 import org.rsmod.content.generic.locs.bookcases.BookcaseSearchHook
@@ -12,6 +13,10 @@ import org.rsmod.content.quest.area.lumbridge.idesofmilk.IdesOfMilkQuest
 import org.rsmod.content.quest.area.lumbridge.xmarksthespot.XMarksTheSpotQuest
 import org.rsmod.content.quest.area.rimmington.WitchsPotionRatTail
 import org.rsmod.content.quest.area.varrock.daddyshome.DaddysHomeQuest
+import org.rsmod.content.quest.area.varrock.demonslayer.DelrithAttackHook
+import org.rsmod.content.quest.area.varrock.demonslayer.DemonSlayerCutscenes
+import org.rsmod.content.quest.area.varrock.demonslayer.DemonSlayerQuest
+import org.rsmod.content.quest.area.varrock.demonslayer.DemonSlayerScenes
 import org.rsmod.content.quest.area.varrock.gertrudescat.GertrudesCatQuest
 import org.rsmod.plugin.module.PluginModule
 
@@ -25,9 +30,12 @@ public class QuestModule : PluginModule() {
         bindInstance<DoricsQuest>()
         bindInstance<IdesOfMilkQuest>()
         bindInstance<KnightsSwordQuest>()
+        bindInstance<DemonSlayerQuest>()
+        bindBaseInstance<DemonSlayerScenes>(DemonSlayerCutscenes::class.java)
         addSetBinding<SpellQuestRequirement>(PolicySpellQuestRequirement::class.java)
         addSetBinding<BookcaseSearchHook>(TouristCentreBookcases::class.java)
         addSetBinding<SpadeDigHook>(XMarksTheSpotQuest::class.java)
         addSetBinding<NpcDeathKillHook>(WitchsPotionRatTail::class.java)
+        addSetBinding<NpcAttackValidateHook>(DelrithAttackHook::class.java)
     }
 }
