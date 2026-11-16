@@ -19,6 +19,7 @@ import org.rsmod.annotations.InternalApi
 import org.rsmod.api.inv.storage.PlayerItemStorage
 import org.rsmod.api.invtx.InvTransactionsScript
 import org.rsmod.api.market.MarketPrices
+import org.rsmod.api.player.hook.HeldEquipValidateHook
 import org.rsmod.api.player.hook.PlayerGroundItemDropHook
 import org.rsmod.api.player.interact.HeldInteractions
 import org.rsmod.api.player.protect.ProtectedAccessContextFactory
@@ -207,6 +208,7 @@ class FletchingKnifeEquipTest {
                                 }
                             )
                             Multibinder.newSetBinder(binder(), PlayerGroundItemDropHook::class.java)
+                            Multibinder.newSetBinder(binder(), HeldEquipValidateHook::class.java)
                         }
                     }
                 )
